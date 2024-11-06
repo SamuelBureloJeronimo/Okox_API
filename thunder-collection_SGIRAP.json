@@ -1,0 +1,75 @@
+{
+    "clientName": "Thunder Client",
+    "collectionName": "SGIRAP",
+    "collectionId": "34f4a5e3-59ad-4732-93a1-939947b9745f",
+    "dateExported": "2024-11-06T04:22:36.111Z",
+    "version": "1.2",
+    "folders": [],
+    "requests": [
+        {
+            "_id": "6757c784-b65d-4c2d-8607-09da7593138a",
+            "colId": "34f4a5e3-59ad-4732-93a1-939947b9745f",
+            "containerId": "",
+            "name": "Presion",
+            "url": "http://192.168.1.64:5000/presion",
+            "method": "POST",
+            "sortNum": 10000,
+            "created": "2024-11-06T04:21:45.135Z",
+            "modified": "2024-11-06T04:21:45.135Z",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "*/*",
+                    "isDisabled": true
+                },
+                {
+                    "name": "User-Agent",
+                    "value": "Thunder Client (https://www.thunderclient.com)",
+                    "isDisabled": true
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"presion\": \"3.4\",\n  \"id_cliente\": \"1\"\n}",
+                "form": []
+            }
+        },
+        {
+            "_id": "e2bcb51c-cab0-433a-87db-bd4a239e8e6a",
+            "colId": "34f4a5e3-59ad-4732-93a1-939947b9745f",
+            "containerId": "",
+            "name": "Obtener suma total consumo",
+            "url": "http://192.168.1.64:5000/get_fct",
+            "method": "GET",
+            "sortNum": 20000,
+            "created": "2024-11-06T04:22:13.478Z",
+            "modified": "2024-11-06T04:22:13.478Z",
+            "headers": [
+                {
+                    "name": "Accept",
+                    "value": "*/*",
+                    "isDisabled": true
+                },
+                {
+                    "name": "User-Agent",
+                    "value": "Thunder Client (https://www.thunderclient.com)",
+                    "isDisabled": true
+                },
+                {
+                    "name": "Content-Type",
+                    "value": "application/json"
+                }
+            ],
+            "body": {
+                "type": "json",
+                "raw": "{\n  \"id_cliente\": \"1\"\n}",
+                "form": []
+            }
+        }
+    ],
+    "ref": "_BjZhOLdR2efF0Vujl5jx-_clkIL4dzOx-A_0OCT2GEBfEd_FiyIFY82DmqWrW3RUiiYI2K66FvEy7rbFZyv7Q"
+}
