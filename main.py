@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 import mysql.connector, datetime, urllib.parse
 from mysql.connector import Error
-LIMIT_LH = 6.0
+LIMIT_LH = 26.0
 
 app = Flask(__name__)
 # ======== CONSULTAS SOLO PARA CLIENTES REGISTRADOS ======== #
@@ -52,6 +52,7 @@ app = Flask(__name__)
 @app.route('/obtener-dispostivo/<id_dispositivo>', methods=['GET'])
 @app.route('/obtener-all-dispostivo', methods=['GET'])
 @app.route('/actualizar-dispostivo/<id_dispostivo>', methods=['PUT'])
+
 # ============== IoT y Servidor ============== #
 # Se obtienen los datos iniciales: id_cliente y volumen_Litros
 @app.route('/initialitation/<codedMac>', methods=['GET'])
@@ -91,7 +92,7 @@ def initialitation(codedMac):
         # Obtener el resultado
         res1 = cursor.fetchone()
 
-        return jsonify({"res": "Datos obtenidos correctamente", "id_cliente": res1[0], "volumen_Litros": res1[1]}), 200
+        return jsonify({"res": "Datos obtenidos correctamente", "id_cliente": res1[0], "volumen_Litros": res1[1]/60}), 200
     except Error as e:
         print("Error al insertar datos", e)
         return jsonify({"error": "Error al consultar los datos"}), 500

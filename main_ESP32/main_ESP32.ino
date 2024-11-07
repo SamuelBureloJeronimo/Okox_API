@@ -4,7 +4,7 @@
 
 const char* ssid = "SpartanLuck 117";
 const char* password = "numeroPI141592";
-const String serverUrl = "http://192.168.1.64:5000";
+const String serverUrl = "http://192.168.166.162:5000";
 
 int id_cliente;
 String macAddress;  // Variable global para almacenar la dirección MAC
@@ -38,11 +38,11 @@ void setup() {
   //RELEVADOR
   pinMode(relePin, OUTPUT); // Configura el pin del relé como salida
   digitalWrite(relePin, HIGH); // Inicialmente apagado (relé en alto)
-
+  */
   //SENSOR DE FLUJO DE AGUA
   pinMode(sensorPin, INPUT_PULLUP);    // Configura el pin del sensor como entrada
   attachInterrupt(digitalPinToInterrupt(sensorPin), contarPulsos, FALLING); // Interrupción para contar pulsos
-  */
+
 }
 
 // Función de interrupción para contar pulsos
@@ -51,7 +51,7 @@ void contarPulsos() {
 }
 
 void loop() {
-  //SendData_WaterFlow();
+  SendData_WaterFlow();
   delay(5000);
 }
 
@@ -80,7 +80,7 @@ void SendData_WaterFlow()
     if (WiFi.status() == WL_CONNECTED) {
     //INICIALIZA LOS SERVIOS HTTP
     HTTPClient http;
-    http.begin(serverUrl);
+    http.begin(serverUrl+"/presion");
     //CREA LA CABECERA - TIPO JSON
     http.addHeader("Content-Type", "application/json");
     //LLENA EL JSON en texto plano
@@ -90,7 +90,8 @@ void SendData_WaterFlow()
     //ESPERA LA RESPUESTA
     if (httpResponseCode > 0) {
       String response = http.getString();
-      OpenCloseValvula(response);
+      Serial.println(response);
+      //OpenCloseValvula(response);
     } else {
       Serial.print("1.- Error en la conexión: ");
       Serial.println(httpResponseCode);
