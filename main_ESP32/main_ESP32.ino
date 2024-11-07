@@ -2,17 +2,18 @@
 #include <HTTPClient.h>
 #include <ArduinoJson-v6.21.5.h>
 
-const char* ssid = "JEFE-CARRERAS_5G";
-const char* password = "s0p0rt3#JC";
-const char* serverUrl = "http://192.168.14.121:5000/presion";
-const int id_cliente = 1;
+const char* ssid = "SpartanLuck 117";
+const char* password = "numeroPI141592";
+const String serverUrl = "http://192.168.1.64:5000";
 
+int id_cliente;
+String macAddress;  // Variable global para almacenar la dirección MAC
+float volumen_Litros;       // Volumen total en litros
 // Pines y Variables
 const int sensorPin = 2;       // Pin de entrada para el sensor YF-S201
 volatile int pulsos = 0;        // Contador de pulsos
 float factorCalibracion = 7.5;  // Factor de calibración para el sensor (ajustar según el modelo y pruebas)
 float flujo_Lmin = 0;           // Flujo en L/min
-float volumen_Litros = 0;       // Volumen total en litros
 
 const int relePin = 33; // Pin donde está conectado el relé
 unsigned long tiempoAnterior = 0; // Variable para el cálculo de intervalos de tiempo
@@ -29,7 +30,9 @@ void setup() {
   Serial.println("Conectado a WiFi");
   Serial.print("Ip addres: ");
   Serial.println(WiFi.localIP());
-
+  macAddress = WiFi.macAddress();  // Obtiene la dirección MAC
+  initMain();
+  /*
   //ELECTROVÁLVULA
   Serial.println("Activando electroválvula...");
   //RELEVADOR
@@ -39,6 +42,7 @@ void setup() {
   //SENSOR DE FLUJO DE AGUA
   pinMode(sensorPin, INPUT_PULLUP);    // Configura el pin del sensor como entrada
   attachInterrupt(digitalPinToInterrupt(sensorPin), contarPulsos, FALLING); // Interrupción para contar pulsos
+  */
 }
 
 // Función de interrupción para contar pulsos
@@ -47,7 +51,7 @@ void contarPulsos() {
 }
 
 void loop() {
-  SendData_WaterFlow();
+  //SendData_WaterFlow();
   delay(5000);
 }
 
@@ -86,7 +90,7 @@ void SendData_WaterFlow()
     //ESPERA LA RESPUESTA
     if (httpResponseCode > 0) {
       String response = http.getString();
-      JSON_Analisys(response);
+      OpenCloseValvula(response);
     } else {
       Serial.print("1.- Error en la conexión: ");
       Serial.println(httpResponseCode);
@@ -97,7 +101,7 @@ void SendData_WaterFlow()
   }
 }
 
-void JSON_Analisys(String response) {
+void OpenCloseValvula(String response) {
     // Reserva espacio para el análisis del JSON
     StaticJsonDocument<200> doc;
     DeserializationError error = deserializeJson(doc, response);
@@ -125,17 +129,34 @@ void JSON_Analisys(String response) {
         digitalWrite(relePin, HIGH); // Inicialmente apagado (relé en alto)
     }
 }
-/*
-initMain(){
+
+void initMain(){
   if (WiFi.status() == WL_CONNECTED) { // Verifica la conexión Wi-Fi
     HTTPClient http;                   // Crear un objeto HTTP
 
-    http.begin("http://192.168.1.64:5000/get-client/"+String(id_cliente));  // Especifica la URL
+    //CREA LA CABECERA - TIPO JSON
+    String encodedMac = urlEncode(macAddress);
+    String url = serverUrl+"/initialitation/"+encodedMac;
+    http.begin(url);  // Especifica la URL
+    http.setTimeout(30000); // Establece el tiempo de espera a 30 segundos
     int httpResponseCode = http.GET(); // Realiza la petición GET
 
-    if (httpResponseCode > 0) { // Si el código de respuesta es mayor a 0, es exitoso
+    if (httpResponseCode == 200) { // Si el código de respuesta es mayor a 0, es exitoso
       String payload = http.getString(); // Obtén el cuerpo de la respuesta
-      Serial.println(payload);           // Muestra los datos en el monitor serie
+      Serial.println(payload);// Muestra los datos en el monitor serie
+      // Reserva espacio para el análisis del JSON
+      StaticJsonDocument<200> doc;
+      DeserializationError error = deserializeJson(doc, payload);
+
+      // Verificar si hubo error en el análisis
+      if (error) {
+          Serial.print(F("Error de JSON: "));
+          Serial.println(error.f_str());
+      }
+
+      id_cliente = doc["id_cliente"];
+      volumen_Litros = doc["volumen_Litros"];
+
     } else {
       Serial.print("Error en la petición: ");
       Serial.println(httpResponseCode);  // Muestra el código de error si falla
@@ -145,4 +166,20 @@ initMain(){
   } else {
     Serial.println("No conectado a Wi-Fi");
   }
-}*/
+}
+
+// Función para codificar caracteres especiales en la URL
+String urlEncode(String str) {
+  String encoded = "";
+  for (int i = 0; i < str.length(); i++) {
+    char c = str.charAt(i);
+    if (c == ':') {
+      encoded += "%3A";  // Reemplazar ':' por '%3A'
+    } else if (c == ' ') {
+      encoded += "%20";  // Reemplazar espacios por '%20'
+    } else {
+      encoded += c;  // Otros caracteres se mantienen igual
+    }
+  }
+  return encoded;
+}
