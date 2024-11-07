@@ -2,9 +2,9 @@
 #include <HTTPClient.h>
 #include <ArduinoJson-v6.21.5.h>
 
-const char* ssid = "SpartanLuck 117";
-const char* password = "numeroPI141592";
-const char* serverUrl = "http://192.168.1.64:5000/presion";
+const char* ssid = "JEFE-CARRERAS_5G";
+const char* password = "s0p0rt3#JC";
+const char* serverUrl = "http://192.168.14.121:5000/presion";
 const int id_cliente = 1;
 
 // Pines y Variables
@@ -125,7 +125,7 @@ void JSON_Analisys(String response) {
         digitalWrite(relePin, HIGH); // Inicialmente apagado (relé en alto)
     }
 }
-
+/*
 initMain(){
   if (WiFi.status() == WL_CONNECTED) { // Verifica la conexión Wi-Fi
     HTTPClient http;                   // Crear un objeto HTTP
@@ -145,4 +145,4 @@ initMain(){
   } else {
     Serial.println("No conectado a Wi-Fi");
   }
-}
+}*/
