@@ -15,14 +15,6 @@ app = Flask(__name__)
 @app.route('/obtener-persona/<id_cliente>/<id_persona>', methods=['GET'])
 
 # ============== RESERVADO PARA ADMINISTRADORES ============== #
-# QUERY's - CLIENTES
-@app.route('/registrar-cliente', methods=['POST'])
-@app.route('/actualizar-cliente/<id_cliente>', methods=['PUT'])
-@app.route('/obtener-all-clientes', methods=['GET'])
-#QUERY's - PERSONAS
-@app.route('/registrar-persona', methods=['POST'])
-@app.route('/obtener-persona/<id_persona>', methods=['GET'])
-@app.route('/obtener-all-personas', methods=['GET'])
 # QUERY's - REPORTES
 @app.route('/obtener-all-reportes', methods=['GET'])
 @app.route('/obtener-reporte/<id_reporte>', methods=['GET'])
@@ -48,10 +40,18 @@ app = Flask(__name__)
 @app.route('/obtener-all-avisos', methods=['GET'])
 @app.route('/actualizar-aviso/<id_aviso>', methods=['PUT'])
 # Query's - DISPOSITIVOS
-@app.route('/registrar-dispostivo', methods=['POST'])
 @app.route('/obtener-dispostivo/<id_dispositivo>', methods=['GET'])
 @app.route('/obtener-all-dispostivo', methods=['GET'])
 @app.route('/actualizar-dispostivo/<id_dispostivo>', methods=['PUT'])
+
+# ============== RESERVADO PARA CAPTURISTAS Y ADMINISTRADORES ============== #
+# Query's - CLIENTES
+@app.route('/obtener-all-clientes', methods=['GET'])
+@app.route('/registrar-cliente', methods=['POST'])
+@app.route('/actualizar-cliente/<id_cliente>', methods=['PUT'])
+
+# ============== RESERVADO PARA TÉCNICOS ============== #
+
 
 # ============== IoT y Servidor ============== #
 # Se obtienen los datos iniciales: id_cliente y volumen_Litros
