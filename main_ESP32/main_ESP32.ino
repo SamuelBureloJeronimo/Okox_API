@@ -10,16 +10,16 @@ int id_cliente;
 String macAddress;  // Variable global para almacenar la dirección MAC
 float volumen_Litros;       // Volumen total en litros
 // Pines y Variables
-const int sensorPin = 2;       // Pin de entrada para el sensor YF-S201
+const int sensorPin = 15;       // Pin de entrada para el sensor YF-S201
 volatile int pulsos = 0;        // Contador de pulsos
 float factorCalibracion = 7.5;  // Factor de calibración para el sensor (ajustar según el modelo y pruebas)
 float flujo_Lmin = 0;           // Flujo en L/min
 
-const int relePin = 33; // Pin donde está conectado el relé
+const int relePin = 23; // Pin donde está conectado el relé
 unsigned long tiempoAnterior = 0; // Variable para el cálculo de intervalos de tiempo
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(9600);  
   // MODULO DE CONEXIÓN A INTERNET
   WiFi.begin(ssid, password);
   delay(3000);
@@ -31,18 +31,14 @@ void setup() {
   Serial.print("Ip addres: ");
   Serial.println(WiFi.localIP());
   macAddress = WiFi.macAddress();  // Obtiene la dirección MAC
-  initMain();
-  /*
+  //initMain();
   //ELECTROVÁLVULA
-  Serial.println("Activando electroválvula...");
   //RELEVADOR
   pinMode(relePin, OUTPUT); // Configura el pin del relé como salida
-  digitalWrite(relePin, HIGH); // Inicialmente apagado (relé en alto)
 
   //SENSOR DE FLUJO DE AGUA
   pinMode(sensorPin, INPUT_PULLUP);    // Configura el pin del sensor como entrada
   attachInterrupt(digitalPinToInterrupt(sensorPin), contarPulsos, FALLING); // Interrupción para contar pulsos
-  */
 }
 
 // Función de interrupción para contar pulsos
@@ -53,6 +49,11 @@ void contarPulsos() {
 void loop() {
   //SendData_WaterFlow();
   delay(5000);
+  Serial.println("Apagando electroválvula...");
+  digitalWrite(relePin, LOW); // Inicialmente apagado (relé en alto)
+  delay(5000);
+  Serial.println("Activando electroválvula...");
+  digitalWrite(relePin, HIGH); // Inicialmente apagado (relé en alto)
 }
 
 void SendData_WaterFlow()
@@ -80,15 +81,17 @@ void SendData_WaterFlow()
     if (WiFi.status() == WL_CONNECTED) {
     //INICIALIZA LOS SERVIOS HTTP
     HTTPClient http;
-    http.begin(serverUrl);
+    http.begin(serverUrl+"/presion");
+    http.setTimeout(30000); // Establece el tiempo de espera a 30 segundos
     //CREA LA CABECERA - TIPO JSON
     http.addHeader("Content-Type", "application/json");
     //LLENA EL JSON en texto plano
     String jsonPayload = "{\"presion\":\"" + String(flujo_Lmin) + "\",\"id_cliente\":\""+String(id_cliente)+"\",\"volumen_Litros\":\""+volumen_Litros+"\"}";
+    Serial.println(jsonPayload);
     //ENVÍA LA SOLICITUD - TIPO POST
     int httpResponseCode = http.POST(jsonPayload);
     //ESPERA LA RESPUESTA
-    if (httpResponseCode > 0) {
+    if (httpResponseCode == 200) {
       String response = http.getString();
       OpenCloseValvula(response);
     } else {

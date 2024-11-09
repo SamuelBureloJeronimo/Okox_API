@@ -1,9 +1,30 @@
 from flask import Flask, request, jsonify
 import mysql.connector, datetime, urllib.parse
 from mysql.connector import Error
-LIMIT_LH = 6.0
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+LIMIT_LH = 26.0
 
 app = Flask(__name__)
+
+# Configura una clave secreta para firmar los tokens
+app.config["JWT_SECRET_KEY"] = "CLAVE-ULTRA-SECRETA"
+
+# Inicializa el manejador de JWT
+jwt = JWTManager(app)
+# ======= CONSULTAS PARA LOS USUARIOS ====== #
+@app.route("/login", methods=["POST"])
+def login():
+    username = request.json.get("username", None)
+    password = request.json.get("password", None)
+
+    if username != "usuario" or password != "contraseña":
+        return jsonify({"msg": "Credenciales incorrectas"}), 401
+
+    # Crea un token de acceso
+    access_token = create_access_token(identity=username)
+    return jsonify(access_token=access_token)
+
+
 # ======== CONSULTAS SOLO PARA CLIENTES REGISTRADOS ======== #
 # QUERY's - CLIENTES
 @app.route('/obtener-cliente/<id_cliente>', methods=['GET'])
@@ -15,14 +36,6 @@ app = Flask(__name__)
 @app.route('/obtener-persona/<id_cliente>/<id_persona>', methods=['GET'])
 
 # ============== RESERVADO PARA ADMINISTRADORES ============== #
-# QUERY's - CLIENTES
-@app.route('/registrar-cliente', methods=['POST'])
-@app.route('/actualizar-cliente/<id_cliente>', methods=['PUT'])
-@app.route('/obtener-all-clientes', methods=['GET'])
-#QUERY's - PERSONAS
-@app.route('/registrar-persona', methods=['POST'])
-@app.route('/obtener-persona/<id_persona>', methods=['GET'])
-@app.route('/obtener-all-personas', methods=['GET'])
 # QUERY's - REPORTES
 @app.route('/obtener-all-reportes', methods=['GET'])
 @app.route('/obtener-reporte/<id_reporte>', methods=['GET'])
@@ -48,10 +61,29 @@ app = Flask(__name__)
 @app.route('/obtener-all-avisos', methods=['GET'])
 @app.route('/actualizar-aviso/<id_aviso>', methods=['PUT'])
 # Query's - DISPOSITIVOS
-@app.route('/registrar-dispostivo', methods=['POST'])
 @app.route('/obtener-dispostivo/<id_dispositivo>', methods=['GET'])
 @app.route('/obtener-all-dispostivo', methods=['GET'])
 @app.route('/actualizar-dispostivo/<id_dispostivo>', methods=['PUT'])
+
+# ============== RESERVADO PARA CAPTURISTAS Y ADMINISTRADORES ============== #
+# Query's - CLIENTES
+@app.route('/obtener-all-clientes', methods=['GET'])
+@app.route('/registrar-cliente', methods=['POST'])
+def registrar_cliente():
+    # Primero se debe registrar una persona
+    nombre = request.form.get("nombre")
+    email = request.form.get("email")
+    
+    # Despues un cliente
+
+    # Al final se crea su usuario
+
+    #Se genera su Token
+@app.route('/actualizar-cliente/<id_cliente>', methods=['PUT'])
+
+# ============== RESERVADO PARA TÉCNICOS ============== #
+
+
 # ============== IoT y Servidor ============== #
 # Se obtienen los datos iniciales: id_cliente y volumen_Litros
 @app.route('/initialitation/<codedMac>', methods=['GET'])
@@ -91,9 +123,9 @@ def initialitation(codedMac):
         # Obtener el resultado
         res1 = cursor.fetchone()
 
-        return jsonify({"res": "Datos obtenidos correctamente", "id_cliente": res1[0], "volumen_Litros": res1[1]}), 200
+        return jsonify({"res": "Datos obtenidos correctamente", "id_cliente": res1[0], "volumen_Litros": res1[1]/60}), 200
     except Error as e:
-        print("Error al insertar datos", e)
+        print("Error al consultar los datos", e)
         return jsonify({"error": "Error al consultar los datos"}), 500
     finally:
         connection.close()
@@ -111,7 +143,7 @@ def recibir_datos():
         return jsonify({"error": "Datos no válidos"}), 400
     
     if float(volumen_Litros) > LIMIT_LH:
-        return jsonify({"res": "Tu consumo a superado los "+str(LIMIT_LH)+"L por hora", "cod": 101}), 201
+        return jsonify({"res": "Tu consumo a superado los "+str(LIMIT_LH)+"L por hora"}), 200
 
     # Conectar a la base de datos
     connection = connect_to_database()
@@ -125,7 +157,7 @@ def recibir_datos():
         cursor.execute(insert_query)
         connection.commit()
         cursor.close()
-        return jsonify({"status": "Datos guardados correctamente", "cod": 111}), 201
+        return jsonify({"status": "Datos guardados correctamente"}), 200
     except Error as e:
         print("Error al insertar datos", e)
         return jsonify({"error": "Error al guardar datos"}), 500
