@@ -7,7 +7,6 @@ class Migration_Personas:
             `app` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
             `apm` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
             `fech_nac` date NOT NULL,
-            `rol` int NOT NULL DEFAULT '0',
             `sex` varchar(10) COLLATE utf8mb4_general_ci NOT NULL,
             `id_colonia` int DEFAULT '0',
             PRIMARY KEY (`id`) USING BTREE,

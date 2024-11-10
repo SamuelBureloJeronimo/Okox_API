@@ -3,8 +3,8 @@ class Migration_Clientes:
         return '''
 CREATE TABLE IF NOT EXISTS `clientes` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `id_persona` int DEFAULT NULL,
-  `id_dispositivo` int NOT NULL,
+  `id_persona` int NOT NULL,
+  `id_dispositivo` int,
   `estado_servicio` int DEFAULT 0 NULL,
   `fecha_contratacion` date DEFAULT NULL,
   PRIMARY KEY (`id`),
