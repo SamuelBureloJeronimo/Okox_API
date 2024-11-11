@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS `usuarios` (
   `username` varchar(50) NOT NULL DEFAULT '0',
   `password` varchar(50) NOT NULL DEFAULT '0',
   `rol` int NOT NULL DEFAULT '0',
-  `token` varchar(250) DEFAULT '',
+  `token` longtext DEFAULT '',
   `last_session` datetime,
   PRIMARY KEY (`id`),
   KEY `FK_persona_15654` (`id_persona`),

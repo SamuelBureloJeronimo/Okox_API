@@ -11,7 +11,7 @@ from Models.Usuario import Usuario
 from Models.Cliente import Cliente
 from Models.Persona import Persona
 
-LIMIT_LH = 26.0
+LIMIT_LH = 6.0
 
 app = Flask(__name__)
 
@@ -79,13 +79,164 @@ def login():
 
 # ======== CONSULTAS SOLO PARA CLIENTES REGISTRADOS ======== #
 # QUERY's - CLIENTES
-@app.route('/obtener-cliente/<id_cliente>', methods=['GET'])
+@app.route('/obtener-data-cliente/<id_cliente>', methods=['GET'])
+@jwt_required()
+def get_data_client(id_cliente):
+    # Obtener el rol desde los claims del JWT
+    claims = get_jwt()  # Obtener la identidad (username) del token
+    role = claims.get("role")
+
+    # Verificar que el usuario tiene el rol de administrador o Capturista
+    if role == 1 or role == 3: # 0 == Cliente, 2 == Técnico
+        return jsonify({"mensaje":"No tienes autorizado el acceso."}), 403
+    
+    try:
+        connection = connect_to_database(); # Conectar a la base de datos
+        print("Conexión a la base de datos ABIERTA.")
+        cursor = connection.cursor(); # Crear un cursor para ejecutar las consultas
+        
+        ######################################################################
+        # Cliente
+        # [id_persona], [id_dispositivo], estado_servicio, fecha_contratacion
+        # Persona -> WHERE id=id_persona
+        # nombre, app, apm, fech_nac, sex, [id_colonia]
+        # Colonia -> WHERE id=id_colonia
+        # nombre, asentamiento, ciudad, codigo_postal
+        # Usuario -> WHERE id_persona=id_persona
+        # id, username, rol, last_session
+
+        insert_query = '''
+        SELECT
+            clientes.id,
+            clientes.estado_servicio,
+            clientes.fecha_contratacion,
+            personas.nombre,
+            personas.app,
+            personas.apm,
+            personas.fech_nac,
+            personas.sex,
+            dispositivos.Wifi_MacAddress,
+            colonias.nombre AS colonia_nombre,
+            colonias.asentamiento,
+            colonias.ciudad,
+            colonias.codigo_postal,
+            usuarios.id AS usuario_id,
+            usuarios.username,
+            usuarios.rol,
+            usuarios.last_session
+        FROM
+            clientes
+        JOIN 
+            dispositivos ON dispositivos.id = clientes.id_dispositivo
+        JOIN 
+            personas ON personas.id = clientes.id_persona
+        JOIN 
+            colonias ON colonias.id = personas.id_colonia
+        JOIN 
+            usuarios ON usuarios.id_persona = clientes.id_persona
+        WHERE
+            clientes.id = '''+id_cliente
+        cursor.execute(insert_query)
+        
+        # Obtener el resultado
+        res = cursor.fetchone()
+
+        dataRes = {
+            
+            "estado_servicio": res[1],
+            "fecha_contratacion": res[2],
+
+            "nombre": res[3],
+            "app": res[4],
+            "apm": res[5],
+            "fech_nac": res[6],
+            "sex": res[7],
+
+            "colonia_nombre": res[9],
+            "asentamiento": res[10],
+            "ciudad": res[11],
+            "codigo_postal": res[12],
+
+            "id_user": res[13],
+            "username": res[14],
+            "rol": res[15],
+            "last_session": res[16]
+        }
+
+        ######################################################################
+        cursor.close()
+        connection.close()
+        print("Conexión a la base de datos cerrada.")
+        return jsonify({"msg": "Datos obtenidos correctamente", "data": dataRes}), 200
+    except Error as e:
+        connection.rollback()
+        return jsonify({"error": e.msg}), 500
+    finally:
+        # Cerrar el cursor y la conexión
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+            print("Conexión a la base de datos cerrada.")
+
 # QUERY's - REPORTES
 @app.route('/crear-reporte/<id_cliente>', methods=['POST'])
 @app.route('/obtener-all-reportes-by-client/<id_cliente>', methods=['GET'])
 @app.route('/obtener-reporte/<id_cliente>/<id_reporte>', methods=['GET'])
 #QUERY's - PERSONAS
-@app.route('/obtener-persona/<id_cliente>/<id_persona>', methods=['GET'])
+@app.route('/actualizar-datos-personales/<id_cliente>', methods=['PUT'])
+@jwt_required()
+def actualizar_datos_personales(id_cliente):
+    # Obtener el rol desde los claims del JWT
+    claims = get_jwt()  # Obtener la identidad (username) del token
+    role = claims.get("role")
+
+    # Verificar que el usuario tiene el rol de administrador o Capturista
+    if role == 1 or role == 3: # 0 == Cliente, 2 == Técnico
+        return jsonify({"mensaje":"No tienes autorizado el acceso."}), 403
+    try:
+        connection = connect_to_database(); # Conectar a la base de datos
+        print("Conexión a la base de datos ABIERTA.")
+        cursor = connection.cursor(); # Crear un cursor para ejecutar las consultas
+        
+        ######################################################################
+        # Primero se debe registrar una persona
+        persona = Persona();
+        persona.id = id_cliente;
+        persona.nombre = request.form.get("nombre");
+        persona.app = request.form.get("app");
+        persona.apm = request.form.get("apm");
+        
+        # Extraer los atributos del objeto Persona como una tupla
+        persona_data = (
+            persona.nombre,
+            persona.app,
+            persona.apm,
+            persona.id
+        )
+
+        insert_query1 = """ UPDATE personas SET 
+        nombre=%s, app=%s, apm=%s WHERE id=%s;"""
+        cursor.execute(insert_query1, persona_data)
+
+        # Verifica si se actualizó correctamente
+        if cursor.rowcount == 0:
+            return jsonify({"error": "Error al guardar los datos, ningún registro afectado"}), 500
+        
+
+        ######################################################################
+        cursor.close()
+        connection.close()
+        print("Conexión a la base de datos cerrada.")
+        return jsonify({"msg": "Datos actualizados correctamente"}), 200
+    except Error as e:
+        connection.rollback()
+        return jsonify({"error": e.msg}), 500
+    finally:
+        # Cerrar el cursor y la conexión
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+            print("Conexión a la base de datos cerrada.")
 
 # ============== RESERVADO PARA ADMINISTRADORES ============== #
 # QUERY's - REPORTES
@@ -251,7 +402,9 @@ def registrar_cliente():
             print("Conexión a la base de datos cerrada.")
 
 
-@app.route('/actualizar-cliente/<id_cliente>', methods=['PUT'])
+# ============== RESERVADO PARA CONSULTAS DEL OLAP ============== #
+
+
 
 # ============== RESERVADO PARA TÉCNICOS ============== #
 
