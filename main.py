@@ -3,6 +3,7 @@ import string
 from flask import Flask, request, jsonify
 import datetime, urllib.parse
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt, jwt_required, get_jwt_identity
+from flask_cors import CORS
 
 from connection import connect_to_database
 from mysql.connector import Error
@@ -14,6 +15,8 @@ from Models.Persona import Persona
 LIMIT_LH = 6.0
 
 app = Flask(__name__)
+# Habilitar CORS para todos los orígenes y rutas
+CORS(app)
 
 # Configura una clave secreta para firmar los tokens
 app.config["JWT_SECRET_KEY"] = "CLAVE-ULTRA-SECRETA"
@@ -80,8 +83,10 @@ def login():
 # ======== CONSULTAS SOLO PARA CLIENTES REGISTRADOS ======== #
 # QUERY's - CLIENTES
 @app.route('/obtener-data-cliente/<id_cliente>', methods=['GET'])
-@jwt_required()
+#@jwt_required()
 def get_data_client(id_cliente):
+
+    '''
     # Obtener el rol desde los claims del JWT
     claims = get_jwt()  # Obtener la identidad (username) del token
     role = claims.get("role")
@@ -90,6 +95,7 @@ def get_data_client(id_cliente):
     if role == 1 or role == 3: # 0 == Cliente, 2 == Técnico
         return jsonify({"mensaje":"No tienes autorizado el acceso."}), 403
     
+    '''
     try:
         connection = connect_to_database(); # Conectar a la base de datos
         print("Conexión a la base de datos ABIERTA.")
@@ -123,7 +129,8 @@ def get_data_client(id_cliente):
             usuarios.id AS usuario_id,
             usuarios.username,
             usuarios.rol,
-            usuarios.last_session
+            usuarios.last_session,
+            personas.id
         FROM
             clientes
         JOIN 
@@ -142,6 +149,8 @@ def get_data_client(id_cliente):
         res = cursor.fetchone()
 
         dataRes = {
+
+            "id_persona": res[17],
             
             "estado_servicio": res[1],
             "fecha_contratacion": res[2],
@@ -183,9 +192,10 @@ def get_data_client(id_cliente):
 @app.route('/obtener-all-reportes-by-client/<id_cliente>', methods=['GET'])
 @app.route('/obtener-reporte/<id_cliente>/<id_reporte>', methods=['GET'])
 #QUERY's - PERSONAS
-@app.route('/actualizar-datos-personales/<id_cliente>', methods=['PUT'])
-@jwt_required()
-def actualizar_datos_personales(id_cliente):
+@app.route('/actualizar-datos-personales/<id_persona>', methods=['PUT'])
+#@jwt_required()
+def actualizar_datos_personales(id_persona):
+    '''
     # Obtener el rol desde los claims del JWT
     claims = get_jwt()  # Obtener la identidad (username) del token
     role = claims.get("role")
@@ -193,6 +203,7 @@ def actualizar_datos_personales(id_cliente):
     # Verificar que el usuario tiene el rol de administrador o Capturista
     if role == 1 or role == 3: # 0 == Cliente, 2 == Técnico
         return jsonify({"mensaje":"No tienes autorizado el acceso."}), 403
+    '''
     try:
         connection = connect_to_database(); # Conectar a la base de datos
         print("Conexión a la base de datos ABIERTA.")
@@ -201,11 +212,11 @@ def actualizar_datos_personales(id_cliente):
         ######################################################################
         # Primero se debe registrar una persona
         persona = Persona();
-        persona.id = id_cliente;
+        persona.id = id_persona;
         persona.nombre = request.form.get("nombre");
         persona.app = request.form.get("app");
         persona.apm = request.form.get("apm");
-        
+
         # Extraer los atributos del objeto Persona como una tupla
         persona_data = (
             persona.nombre,
@@ -214,8 +225,11 @@ def actualizar_datos_personales(id_cliente):
             persona.id
         )
 
-        insert_query1 = """ UPDATE personas SET 
-        nombre=%s, app=%s, apm=%s WHERE id=%s;"""
+        insert_query1 = """
+            UPDATE personas 
+            SET nombre = %s, app = %s, apm = %s 
+            WHERE id = %s;
+            """
         cursor.execute(insert_query1, persona_data)
 
         # Verifica si se actualizó correctamente
@@ -224,6 +238,8 @@ def actualizar_datos_personales(id_cliente):
         
 
         ######################################################################
+        # Confirmar cambios
+        connection.commit()
         cursor.close()
         connection.close()
         print("Conexión a la base de datos cerrada.")

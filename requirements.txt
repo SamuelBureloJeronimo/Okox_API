@@ -3,3 +3,4 @@ Flask-JWT-Extended
 mysql-connector-python
 werkzeug
 python-dotenv
+flask-cors
