@@ -12,7 +12,7 @@ from Models.Usuario import Usuario
 from Models.Cliente import Cliente
 from Models.Persona import Persona
 
-LIMIT_LH = 6.0
+LIMIT_LH = 60.0
 
 app = Flask(__name__)
 # Habilitar CORS para todos los orígenes y rutas
@@ -69,6 +69,66 @@ def login():
         connection.close()
         print("Conexión a la base de datos cerrada.")
         return jsonify({"access_token": access_token}), 200
+    except Error as e:
+        connection.rollback()
+        return jsonify({"error": e.msg}), 500
+    finally:
+        # Cerrar el cursor y la conexión
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+            print("Conexión a la base de datos cerrada.")
+@app.route('/obtener-all-presion', methods=['GET'])
+def get_presion_all():
+    try:
+        connection = connect_to_database(); # Conectar a la base de datos
+        print("Conexión a la base de datos ABIERTA.")
+        cursor = connection.cursor(); # Crear un cursor para ejecutar las consultas
+        ######################################################################
+        dataAVG = {
+            "today": 0,
+            "LastWeek": 0,
+            "LastMonth": 0,
+        }
+
+        dataSUM = {
+            "today": 0,
+            "LastWeek": 0,
+            "LastMonth": 0,
+        }
+
+        hora_actual = datetime.datetime.now()
+        fecha = str(hora_actual.year)+"-"+str(hora_actual.month)+"-"+str(hora_actual.day)
+        ayer = str(hora_actual.year)+"-"+str(hora_actual.month)+"-"+str(hora_actual.day-1)
+        fecha1 = str(hora_actual.year)+"-"+str(hora_actual.month)+"-"+str(hora_actual.day-7)
+        fecha2 = str(hora_actual.year)+"-"+str(hora_actual.month-1)+"-"+str(hora_actual.day)
+
+        query_3 = "SELECT AVG(presion), SUM(presion) FROM presion WHERE fecha BETWEEN %s AND %s;"
+        params = (fecha+" 00:00:00", fecha+" 23:59:59")
+        cursor.execute(query_3, params)
+        res = cursor.fetchone()
+        dataAVG["today"] = res[0]
+        dataSUM["today"] = res[1]/60
+        
+        query_3 = "SELECT AVG(presion), SUM(presion) FROM presion WHERE fecha BETWEEN %s AND %s;"
+        params = (fecha1+" 00:00:00", ayer+" 23:59:59")
+        cursor.execute(query_3, params)
+        res1 = cursor.fetchone()
+        dataAVG["LastWeek"] = res1[0]
+        dataSUM["LastWeek"] = res1[1]/60
+
+        query_3 = "SELECT AVG(presion), SUM(presion) FROM presion WHERE fecha BETWEEN %s AND %s;"
+        params = (fecha2+" 00:00:00", ayer+" 23:59:59")
+        cursor.execute(query_3, params)
+        res2 = cursor.fetchone()
+        dataAVG["LastMonth"] = res2[0]
+        dataSUM["LastMonth"] = res2[1]/60
+        
+        ######################################################################
+        cursor.close()
+        connection.close()
+        print("Conexión a la base de datos cerrada.")
+        return jsonify({"msg": "Datos obtenidos correctamente", "dataAVG": dataAVG, "dataSUM": dataSUM}), 200
     except Error as e:
         connection.rollback()
         return jsonify({"error": e.msg}), 500
@@ -244,6 +304,67 @@ def actualizar_datos_personales(id_persona):
         connection.close()
         print("Conexión a la base de datos cerrada.")
         return jsonify({"msg": "Datos actualizados correctamente"}), 200
+    except Error as e:
+        connection.rollback()
+        return jsonify({"error": e.msg}), 500
+    finally:
+        # Cerrar el cursor y la conexión
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+            print("Conexión a la base de datos cerrada.")
+@app.route('/obtener-presion/<id_cliente>', methods=['GET'])
+def get_presion(id_cliente):
+    try:
+        connection = connect_to_database(); # Conectar a la base de datos
+        print("Conexión a la base de datos ABIERTA.")
+        cursor = connection.cursor(); # Crear un cursor para ejecutar las consultas
+        ######################################################################
+
+        dataAVG = {
+            "today": 0,
+            "LastWeek": 0,
+            "LastMonth": 0,
+        }
+
+        dataSUM = {
+            "today": 0,
+            "LastWeek": 0,
+            "LastMonth": 0,
+        }
+
+        hora_actual = datetime.datetime.now()
+        fecha = str(hora_actual.year)+"-"+str(hora_actual.month)+"-"+str(hora_actual.day)
+        ayer = str(hora_actual.year)+"-"+str(hora_actual.month)+"-"+str(hora_actual.day-1)
+        fecha1 = str(hora_actual.year)+"-"+str(hora_actual.month)+"-"+str(hora_actual.day-7)
+        fecha2 = str(hora_actual.year)+"-"+str(hora_actual.month-1)+"-"+str(hora_actual.day)
+
+        query_3 = "SELECT AVG(presion), SUM(presion) FROM presion WHERE id_cliente=%s AND fecha BETWEEN %s AND %s;"
+        params = (id_cliente, fecha+" 00:00:00", fecha+" 23:59:59")
+        cursor.execute(query_3, params)
+        res = cursor.fetchone()
+        dataAVG["today"] = res[0]
+        dataSUM["today"] = res[1]/60
+        
+        query_3 = "SELECT AVG(presion), SUM(presion) FROM presion WHERE id_cliente=%s AND fecha BETWEEN %s AND %s;"
+        params = (id_cliente, fecha1+" 00:00:00", ayer+" 23:59:59")
+        cursor.execute(query_3, params)
+        res1 = cursor.fetchone()
+        dataAVG["LastWeek"] = res1[0]
+        dataSUM["LastWeek"] = res1[1]/60
+
+        query_3 = "SELECT AVG(presion), SUM(presion) FROM presion WHERE id_cliente=%s AND fecha BETWEEN %s AND %s;"
+        params = (id_cliente, fecha2+" 00:00:00", ayer+" 23:59:59")
+        cursor.execute(query_3, params)
+        res2 = cursor.fetchone()
+        dataAVG["LastMonth"] = res2[0]
+        dataSUM["LastMonth"] = res2[1]/60
+        
+        ######################################################################
+        cursor.close()
+        connection.close()
+        print("Conexión a la base de datos cerrada.")
+        return jsonify({"msg": "Datos obtenidos correctamente", "dataAVG": dataAVG, "dataSUM": dataSUM}), 200
     except Error as e:
         connection.rollback()
         return jsonify({"error": e.msg}), 500
@@ -481,15 +602,23 @@ def recibir_datos():
     volumen_Litros = data.get('volumen_Litros')
     
     if (presion is None) or (id_cliente is None) or (volumen_Litros is None):
-        return jsonify({"error": "Datos no válidos"}), 400
-    
-    if float(volumen_Litros) > LIMIT_LH:
-        return jsonify({"res": "Tu consumo a superado los "+str(LIMIT_LH)+"L por hora"}), 200
+        return jsonify({"error": "Datos no válidos"}), 
 
     # Conectar a la base de datos
     connection = connect_to_database()
     if connection is None:
         return jsonify({"error": "No se pudo conectar a la base de datos"}), 500
+    
+    
+    if float(volumen_Litros) > LIMIT_LH:
+        cursor = connection.cursor()
+        insert_query = "INSERT INTO suspensiones (motivo,id_cliente) VALUES ('Limite diario excedido',"+id_cliente+")"
+        cursor.execute(insert_query)
+        connection.commit()
+        cursor.close()
+        return jsonify({"res": "Tu consumo a superado los "+str(LIMIT_LH)+"L por hora"}), 200
+
+    
 
     # Insertar datos en la base de datos
     try:
