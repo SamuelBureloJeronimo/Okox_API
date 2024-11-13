@@ -10,7 +10,7 @@ int id_cliente;
 String macAddress;  // Variable global para almacenar la dirección MAC
 float volumen_Litros;       // Volumen total en litros
 // Pines y Variables
-const int sensorPin = 15;       // Pin de entrada para el sensor YF-S201
+const int sensorPin = 22;       // Pin de entrada para el sensor YF-S201
 volatile int pulsos = 0;        // Contador de pulsos
 float factorCalibracion = 7.5;  // Factor de calibración para el sensor (ajustar según el modelo y pruebas)
 float flujo_Lmin = 0;           // Flujo en L/min
@@ -31,7 +31,7 @@ void setup() {
   Serial.print("Ip addres: ");
   Serial.println(WiFi.localIP());
   macAddress = WiFi.macAddress();  // Obtiene la dirección MAC
-  //initMain();
+  initMain();
   //ELECTROVÁLVULA
   //RELEVADOR
   pinMode(relePin, OUTPUT); // Configura el pin del relé como salida
@@ -47,13 +47,8 @@ void contarPulsos() {
 }
 
 void loop() {
-  //SendData_WaterFlow();
+  SendData_WaterFlow();
   delay(5000);
-  Serial.println("Apagando electroválvula...");
-  digitalWrite(relePin, LOW); // Inicialmente apagado (relé en alto)
-  delay(5000);
-  Serial.println("Activando electroválvula...");
-  digitalWrite(relePin, HIGH); // Inicialmente apagado (relé en alto)
 }
 
 void SendData_WaterFlow()

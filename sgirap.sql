@@ -60,18 +60,19 @@ CREATE TABLE IF NOT EXISTS `clientes` (
   KEY `FK_dispositivo_56745` (`id_dispositivo`),
   CONSTRAINT `FK_dispositivo_56745` FOREIGN KEY (`id_dispositivo`) REFERENCES `dispositivos` (`id`),
   CONSTRAINT `FK_persona_09478` FOREIGN KEY (`id_persona`) REFERENCES `personas` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Volcando datos para la tabla u839116441_sgirap.clientes: ~0 rows (aproximadamente)
+-- Volcando datos para la tabla u839116441_sgirap.clientes: ~8 rows (aproximadamente)
 DELETE FROM `clientes`;
 INSERT INTO `clientes` (`id`, `id_persona`, `id_dispositivo`, `estado_servicio`, `fecha_contratacion`) VALUES
-	(10, 11, NULL, '0', '2024-11-09'),
-	(11, 12, NULL, '0', '2024-11-09'),
+	(10, 11, 1, '0', '2024-11-09'),
+	(11, 12, 1, '0', '2024-11-09'),
 	(12, 13, NULL, '0', '2024-11-09'),
 	(13, 14, NULL, '0', '2024-11-09'),
 	(14, 15, NULL, '0', '2024-11-09'),
 	(15, 16, NULL, '0', '2024-11-09'),
-	(16, 17, NULL, '0', '2024-11-09');
+	(16, 17, NULL, '0', '2024-11-09'),
+	(17, 18, NULL, '0', '2024-11-09');
 
 -- Volcando estructura para tabla u839116441_sgirap.colonias
 CREATE TABLE IF NOT EXISTS `colonias` (
@@ -100,7 +101,7 @@ CREATE TABLE IF NOT EXISTS `dispositivos` (
   `id` int NOT NULL AUTO_INCREMENT,
   `Wifi_MacAddress` varchar(18) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Volcando datos para la tabla u839116441_sgirap.dispositivos: ~0 rows (aproximadamente)
 DELETE FROM `dispositivos`;
@@ -190,18 +191,19 @@ CREATE TABLE IF NOT EXISTS `personas` (
   PRIMARY KEY (`id`) USING BTREE,
   KEY `id_colonia` (`id_colonia`),
   CONSTRAINT `FK_colonia_8402` FOREIGN KEY (`id_colonia`) REFERENCES `colonias` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Volcando datos para la tabla u839116441_sgirap.personas: ~0 rows (aproximadamente)
+-- Volcando datos para la tabla u839116441_sgirap.personas: ~8 rows (aproximadamente)
 DELETE FROM `personas`;
 INSERT INTO `personas` (`id`, `nombre`, `app`, `apm`, `fech_nac`, `sex`, `id_colonia`) VALUES
-	(11, 'Samuel', 'Burelos', 'Jerónimo', '2003-08-06', 'Masculino', 1),
+	(11, 'Samuel bb', 'Burelos', 'Jeróni', '2003-08-06', 'Masculino', 1),
 	(12, 'Samuel', 'Burelos', 'Jerónimo', '2003-08-06', 'Masculino', 1),
 	(13, 'Samuel', 'Burelos', 'Jerónimo', '2003-08-06', 'Masculino', 1),
 	(14, 'Samuel', 'Burelos', 'Jerónimo', '2003-08-06', 'Masculino', 1),
 	(15, 'Samuel', 'Burelos', 'Jerónimo', '2003-08-06', 'Masculino', 1),
 	(16, 'Samuel', 'Burelos', 'Jerónimo', '2003-08-06', 'Masculino', 1),
-	(17, 'Samuel', 'Burelos', 'Jerónimo', '2003-08-06', 'Masculino', 1);
+	(17, 'Samuel', 'Burelos', 'Jerónimo', '2003-08-06', 'Masculino', 1),
+	(18, 'Samuel', 'Burelos', 'Jerónimo', '2003-08-06', 'Masculino', 1);
 
 -- Volcando estructura para tabla u839116441_sgirap.presion
 CREATE TABLE IF NOT EXISTS `presion` (
@@ -212,38 +214,57 @@ CREATE TABLE IF NOT EXISTS `presion` (
   PRIMARY KEY (`id`),
   KEY `FK_cliente_2782` (`id_cliente`),
   CONSTRAINT `FK_cliente_278` FOREIGN KEY (`id_cliente`) REFERENCES `clientes` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=426 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=450 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Volcando datos para la tabla u839116441_sgirap.presion: ~0 rows (aproximadamente)
+-- Volcando datos para la tabla u839116441_sgirap.presion: ~13 rows (aproximadamente)
 DELETE FROM `presion`;
+INSERT INTO `presion` (`id`, `presion`, `id_cliente`, `fecha`) VALUES
+	(426, 450, 11, '2024-11-01 22:26:22'),
+	(427, 450, 11, '2024-11-08 12:26:29'),
+	(438, 400, 11, '2024-11-12 22:28:10'),
+	(439, 450, 11, '2024-11-01 22:26:22'),
+	(440, 450, 11, '2024-11-01 22:26:22'),
+	(441, 450, 11, '2024-11-08 12:26:29'),
+	(442, 450, 11, '2024-11-08 12:26:29'),
+	(443, 400, 11, '2024-11-12 22:28:10'),
+	(444, 400, 11, '2024-11-12 22:28:10'),
+	(445, 400, 11, '2024-11-12 22:28:10'),
+	(446, 440, 11, '2024-11-13 22:28:10'),
+	(447, 680, 11, '2024-11-13 22:28:10'),
+	(449, 0, 11, '2024-11-13 02:54:02');
 
 -- Volcando estructura para tabla u839116441_sgirap.reportes
 CREATE TABLE IF NOT EXISTS `reportes` (
-  `id` int NOT NULL,
+  `id` int NOT NULL AUTO_INCREMENT,
   `id_cliente` int NOT NULL,
   `mensaje` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '',
+  `fecha_subida` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `FK_cliente_8345678` (`id_cliente`),
   CONSTRAINT `FK_cliente_8345678` FOREIGN KEY (`id_cliente`) REFERENCES `clientes` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Volcando datos para la tabla u839116441_sgirap.reportes: ~0 rows (aproximadamente)
+-- Volcando datos para la tabla u839116441_sgirap.reportes: ~1 rows (aproximadamente)
 DELETE FROM `reportes`;
+INSERT INTO `reportes` (`id`, `id_cliente`, `mensaje`, `fecha_subida`) VALUES
+	(9, 11, 'Jdjrjfd', '2024-11-13 02:48:02');
 
 -- Volcando estructura para tabla u839116441_sgirap.suspensiones
 CREATE TABLE IF NOT EXISTS `suspensiones` (
   `id` int NOT NULL AUTO_INCREMENT,
-  `motivo_suspension` varchar(120) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `duracion_suspension` time DEFAULT NULL,
+  `motivo` varchar(120) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `duracion_dias` int DEFAULT '1',
   `id_cliente` int DEFAULT NULL,
-  `fecha` datetime DEFAULT NULL,
+  `fecha` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `FK_Cliente_89892` (`id_cliente`),
   CONSTRAINT `FK_Cliente_89892` FOREIGN KEY (`id_cliente`) REFERENCES `clientes` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- Volcando datos para la tabla u839116441_sgirap.suspensiones: ~0 rows (aproximadamente)
+-- Volcando datos para la tabla u839116441_sgirap.suspensiones: ~1 rows (aproximadamente)
 DELETE FROM `suspensiones`;
+INSERT INTO `suspensiones` (`id`, `motivo`, `duracion_dias`, `id_cliente`, `fecha`) VALUES
+	(3, 'Limite diario excedido', 1, 11, '2024-11-13 02:54:18');
 
 -- Volcando estructura para tabla u839116441_sgirap.usuarios
 CREATE TABLE IF NOT EXISTS `usuarios` (
@@ -257,18 +278,33 @@ CREATE TABLE IF NOT EXISTS `usuarios` (
   PRIMARY KEY (`id`),
   KEY `FK_persona_15654` (`id_persona`),
   CONSTRAINT `FK_persona_15654` FOREIGN KEY (`id_persona`) REFERENCES `personas` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Volcando datos para la tabla u839116441_sgirap.usuarios: ~0 rows (aproximadamente)
+-- Volcando datos para la tabla u839116441_sgirap.usuarios: ~8 rows (aproximadamente)
 DELETE FROM `usuarios`;
 INSERT INTO `usuarios` (`id`, `id_persona`, `username`, `password`, `rol`, `token`, `last_session`) VALUES
-	(1, 11, '$[y_Samuel', '$~VVU\'tE', 0, '', NULL),
-	(2, 12, 'OjR_Samuel', 'EE(Q}:@+', 0, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTczMTIwNzMwOCwianRpIjoiYzMwOWNkNTQtNjRhMi00NTM4LTkyNDUtYzEyNWRiMTc1ZDZjIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6Ik9qUl9TYW11ZWwiLCJuYmYiOjE3MzEyMDczMDgsImNzcmYiOiJjYTg1YmFjYy03ODNmLTRiYzgtOTE1Mi0xYWY1NjQ5ODlmMDEiLCJleHAiOjE3MzEyMDkxMDgsInJvbGUiOjB9.pBzTXxus3kAzba1qKmufaXmrZiUlx-t4FEv_fZNLtL0', '2024-11-09 20:55:08'),
+	(1, 11, '$[y_Samuel', '$~VVU\'tE', 0, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTczMTQ5MTA5NiwianRpIjoiNjIzYzczNGMtZDI4Ny00ZDJhLTliN2MtMTUyM2ExODZjZDg0IiwidHlwZSI6ImFjY2VzcyIsInN1YiI6IiRbeV9TYW11ZWwiLCJuYmYiOjE3MzE0OTEwOTYsImNzcmYiOiI5YzRkNmI2My1kZDMzLTQ3YzUtYTEwMy0yODA1OWNjMjMxYzciLCJleHAiOjE3MzE0OTI4OTYsInJvbGUiOjB9.FDS9Y3_WZkfX20CAtlyJndUWGnLF378_SfnSdUlXE4Q', '2024-11-13 03:44:56'),
+	(2, 12, 'OjR_Samuel', 'EE(Q}:@+', 0, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTczMTQ5MTc5NCwianRpIjoiYzhlMTNiYWItZDZjMC00OThkLWI2NDQtYmJiNzcyYzI5NjlkIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6Ik9qUl9TYW11ZWwiLCJuYmYiOjE3MzE0OTE3OTQsImNzcmYiOiI2MDIwZmRkZS1iMmJlLTQ4NjYtYWU3ZS03OTAwOWE4NjdhZjEiLCJleHAiOjE3MzE0OTM1OTQsInJvbGUiOjB9.N2EXEtqqj1z7ETcK_8gyKOdlqQwAIrUtgTUjdBcZEw8', '2024-11-13 03:56:34'),
 	(3, 13, 'NcGw_Samuel', '(*Xk|^<P', 0, '', NULL),
 	(4, 14, 'OqOY_Samuel', '6NUWcjFG', 0, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTczMTIwNzIzNiwianRpIjoiYjE5MTRmNTItMGEwNC00ZTY4LTk3MzctODhhZTYzZDgwMmM4IiwidHlwZSI6ImFjY2VzcyIsInN1YiI6Ik9xT1lfU2FtdWVsIiwibmJmIjoxNzMxMjA3MjM2LCJjc3JmIjoiMGM1MTUzYTEtMWQwNC00ZGI1LWFkZjEtZDQ1YjM5ZGIyZGM1IiwiZXhwIjoxNzMxMjA5MDM2LCJyb2xlIjowfQ.XK81AJjDGVFKGO-wADFCbGaYXf-p2RoESlGrVFU1cMw', '2024-11-09 20:53:56'),
-	(5, 15, 'rhZF_Samuel', 'NDOF7Wmc', 0, NULL, NULL),
-	(6, 16, '93Qe_Samuel', 'kZL2Vzmh', 3, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTczMTIwNzI3NCwianRpIjoiOWQyNjM3ZGQtNzIwZS00YzQzLWIxMDQtZjI3ODRjYjJmNjMwIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6IjkzUWVfU2FtdWVsIiwibmJmIjoxNzMxMjA3Mjc0LCJjc3JmIjoiOTY4NzMzZWUtMGI4OS00ZWMyLWI5MmYtZDg3NmZjYTJmNDllIiwiZXhwIjoxNzMxMjA5MDc0LCJyb2xlIjozfQ._I--rdpcotEQ0K1MoNxrHfTMoTR49MQ-j_Z1df-dkzM', '2024-11-09 20:54:34'),
-	(7, 17, 'wfdd_Samuel', 'TrnQDuCT', 0, NULL, NULL);
+	(5, 15, 'user', 'user', 3, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTczMTQ5NjY3NywianRpIjoiOWQ5MGU2OTQtN2UyNi00ZDgwLTliOGQtYzQzMTQ1Y2Q4OGQ2IiwidHlwZSI6ImFjY2VzcyIsInN1YiI6InVzZXIiLCJuYmYiOjE3MzE0OTY2NzcsImNzcmYiOiI5NDBkZGZjOS1hZDYzLTQ1OTgtYmU5OS00N2QwNGYwYTk5NDAiLCJleHAiOjE3MzE0OTg0NzcsInJvbGUiOjN9.L9IpYwztNEoMAnBG8tZJkNwrr8fyNjRfly67vJQVa4c', '2024-11-13 05:17:58'),
+	(6, 16, '93Qe_Samuel', 'kZL2Vzmh', 3, 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTczMTQ5MTA1OSwianRpIjoiOWYyMzZkM2EtMjg4ZC00NGIxLWJlNmEtZDJhODkxOTg2ZTYyIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6IjkzUWVfU2FtdWVsIiwibmJmIjoxNzMxNDkxMDU5LCJjc3JmIjoiMjA2MzY2MzUtY2ExYi00ZDA2LThmNmItNzdkZmMwMGFjOTlkIiwiZXhwIjoxNzMxNDkyODU5LCJyb2xlIjozfQ._OO1lhqA6n7AQbrLR036__Z2vDv87ockXHyRV9uWXg4', '2024-11-13 03:44:20'),
+	(7, 17, 'wfdd_Samuel', 'TrnQDuCT', 0, NULL, NULL),
+	(8, 18, 'aB9O_Samuel', '3CKXicx2', 0, NULL, NULL);
+
+-- Volcando estructura para vista u839116441_sgirap.vista_consumo_cliente
+-- Creando tabla temporal para superar errores de dependencia de VIEW
+CREATE TABLE `vista_consumo_cliente` (
+	`id_cliente` INT(10) NOT NULL,
+	`SUM(presion)` DOUBLE NULL,
+	`AVG(presion)` DOUBLE NULL,
+	`MAX(presion)` FLOAT NULL
+) ENGINE=MyISAM;
+
+-- Volcando estructura para vista u839116441_sgirap.vista_consumo_cliente
+-- Eliminando tabla temporal y crear estructura final de VIEW
+DROP TABLE IF EXISTS `vista_consumo_cliente`;
+CREATE ALGORITHM=UNDEFINED SQL SECURITY DEFINER VIEW `vista_consumo_cliente` AS select `presion`.`id_cliente` AS `id_cliente`,sum(`presion`.`presion`) AS `SUM(presion)`,avg(`presion`.`presion`) AS `AVG(presion)`,max(`presion`.`presion`) AS `MAX(presion)` from `presion` where (`presion`.`id_cliente` = 11) group by `presion`.`id_cliente`,`presion`.`id`;
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

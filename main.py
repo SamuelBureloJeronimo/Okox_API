@@ -1,7 +1,9 @@
 import secrets
 import string
 from flask import Flask, request, jsonify
-import datetime, urllib.parse
+import urllib.parse
+from datetime import datetime, timedelta
+
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt, jwt_required, get_jwt_identity
 from flask_cors import CORS
 
@@ -20,7 +22,7 @@ CORS(app)
 
 # Configura una clave secreta para firmar los tokens
 app.config["JWT_SECRET_KEY"] = "CLAVE-ULTRA-SECRETA"
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = datetime.timedelta(hours=0.5)  # El token expira en 1 hora
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=0.5)  # El token expira en 1 hora
 
 # Inicializa el manejador de JWT
 jwt = JWTManager(app)
@@ -47,6 +49,8 @@ def login():
         # Obtener el resultado
         res1 = cursor.fetchone()
 
+        rol = res1[4]
+
         if res1 == None:
             return jsonify({"message": "Credenciales invalidas"}), 400
         elif res1[2] != username or res1[3] != password:
@@ -55,9 +59,13 @@ def login():
         # Crea un token de acceso
         access_token = create_access_token(identity=username, additional_claims={"role": res1[4]})
 
+        query = "SELECT id FROM clientes WHERE id_persona=%s;"
+        cursor.execute(query, (res1[1],))
+        cl_id = cursor.fetchone();
+
 
         query2 = "UPDATE usuarios SET token=%s, last_session=%s WHERE id=%s;"
-        cursor.execute(query2, (access_token, datetime.datetime.now(), res1[0]))
+        cursor.execute(query2, (access_token, datetime.now(), res1[0]))
 
         # Verifica si se actualizó correctamente
         if cursor.rowcount == 0:
@@ -68,7 +76,7 @@ def login():
         cursor.close()
         connection.close()
         print("Conexión a la base de datos cerrada.")
-        return jsonify({"access_token": access_token}), 200
+        return jsonify({"access_token": access_token, "rol": rol, "id_cliente": cl_id}), 200
     except Error as e:
         connection.rollback()
         return jsonify({"error": e.msg}), 500
@@ -97,7 +105,7 @@ def get_presion_all():
             "LastMonth": 0,
         }
 
-        hora_actual = datetime.datetime.now()
+        hora_actual = datetime.now()
         fecha = str(hora_actual.year)+"-"+str(hora_actual.month)+"-"+str(hora_actual.day)
         ayer = str(hora_actual.year)+"-"+str(hora_actual.month)+"-"+str(hora_actual.day-1)
         fecha1 = str(hora_actual.year)+"-"+str(hora_actual.month)+"-"+str(hora_actual.day-7)
@@ -249,8 +257,82 @@ def get_data_client(id_cliente):
 
 # QUERY's - REPORTES
 @app.route('/crear-reporte/<id_cliente>', methods=['POST'])
+def create_reporte(id_cliente):
+    try:
+        connection = connect_to_database(); # Conectar a la base de datos
+        print("Conexión a la base de datos ABIERTA.")
+        cursor = connection.cursor(); # Crear un cursor para ejecutar las consultas
+
+        ##########################################################################
+
+        # Verificar si ya existe un registro para la fecha actual
+        # Obtener la fecha actual
+        fecha = datetime.now().strftime('%Y-%m-%d')
+
+        query_verificar = "SELECT * FROM reportes WHERE id_cliente = %s AND fecha_subida BETWEEN %s AND %s;"
+        params = (id_cliente, f"{fecha} 00:00:00", f"{fecha} 23:59:59")
+        cursor.execute(query_verificar, params)
+        
+        registro_existente = cursor.fetchall()
+
+        if registro_existente:
+            return jsonify({'error': 'Ya existe un registro para el día de hoy.'}), 400
+        
+
+        insert_query = "INSERT INTO reportes (id_cliente, mensaje) VALUES (%s,%s);"
+        data = (id_cliente, request.form.get("mensaje"))
+        cursor.execute(insert_query, data)
+
+        ##########################################################################
+
+        # Cerrar la conexión
+        cursor.close()
+        connection.commit()
+        connection.close()
+        print("Conexión a la base de datos cerrada.")
+        return jsonify({"msg": "Reporte registrado"}), 200
+    except Error as e:
+        connection.rollback()
+        return jsonify({"error": e.msg}), 500
+    finally:
+        # Cerrar el cursor y la conexión
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+            print("Conexión a la base de datos cerrada.")
+
 @app.route('/obtener-all-reportes-by-client/<id_cliente>', methods=['GET'])
 @app.route('/obtener-reporte/<id_cliente>/<id_reporte>', methods=['GET'])
+@app.route('/obtener-notificaciones/<id_cliente>', methods=['GET'])
+def get_noti(id_cliente):
+    try:
+        connection = connect_to_database(); # Conectar a la base de datos
+        print("Conexión a la base de datos ABIERTA.")
+        cursor = connection.cursor(); # Crear un cursor para ejecutar las consultas
+
+        ##########################################################################
+
+        insert_query = "SELECT * FROM suspensiones WHERE id_cliente="+id_cliente+";"
+        cursor.execute(insert_query)
+        # Obtener el resultado
+        res = cursor.fetchall()
+        
+        ##########################################################################
+
+        # Cerrar la conexión
+        cursor.close()
+        connection.close()
+        print("Conexión a la base de datos cerrada.")
+        return jsonify({"lista": res}), 200
+    except Error as e:
+        connection.rollback()
+        return jsonify({"error": e.msg}), 500
+    finally:
+        # Cerrar el cursor y la conexión
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+            print("Conexión a la base de datos cerrada.")
 #QUERY's - PERSONAS
 @app.route('/actualizar-datos-personales/<id_persona>', methods=['PUT'])
 #@jwt_required()
@@ -332,8 +414,7 @@ def get_presion(id_cliente):
             "LastWeek": 0,
             "LastMonth": 0,
         }
-
-        hora_actual = datetime.datetime.now()
+        hora_actual = datetime.now()
         fecha = str(hora_actual.year)+"-"+str(hora_actual.month)+"-"+str(hora_actual.day)
         ayer = str(hora_actual.year)+"-"+str(hora_actual.month)+"-"+str(hora_actual.day-1)
         fecha1 = str(hora_actual.year)+"-"+str(hora_actual.month)+"-"+str(hora_actual.day-7)
@@ -408,8 +489,9 @@ def get_presion(id_cliente):
 # ============== RESERVADO PARA CAPTURISTAS Y ADMINISTRADORES ============== #
 # Query's - CLIENTES
 @app.route('/obtener-all-clientes', methods=['GET'])
-@jwt_required()
+#@jwt_required()
 def gets_all_clients():
+    '''
     # Obtener el rol desde los claims del JWT
     claims = get_jwt()  # Obtener la identidad (username) del token
     role = claims.get("role")
@@ -417,6 +499,8 @@ def gets_all_clients():
     # Verificar que el usuario tiene el rol de administrador o Capturista
     if role == 0 or role == 2: # 0 == Cliente, 2 == Técnico
         return jsonify({"mensaje":"No tienes autorizado el acceso."}), 403
+    
+    '''
     
     connection = connect_to_database(); # Conectar a la base de datos
     print("Conexión a la base de datos ABIERTA.")
@@ -550,7 +634,7 @@ def registrar_cliente():
 # Se obtienen los datos iniciales: id_cliente y volumen_Litros
 @app.route('/initialitation/<codedMac>', methods=['GET'])
 def initialitation(codedMac):
-    hora_actual = datetime.datetime.now()
+    hora_actual = datetime.now()
     fecha = str(hora_actual.year)+"-"+str(hora_actual.month)+"-"+str(hora_actual.day)
 
     # Extrae los datos del ESP32 enviados en formato JSON
