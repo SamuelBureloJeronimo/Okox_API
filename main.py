@@ -4,8 +4,8 @@ from flask import Flask, request, jsonify
 import urllib.parse
 from datetime import datetime, timedelta
 
-from flask_jwt_extended import JWTManager, create_access_token, get_jwt, jwt_required, get_jwt_identity
-from flask_cors import CORS
+from flask_jwt_extended import JWTManager, create_access_token, get_jwt, jwt_required, get_jwt_identity # type: ignore
+from flask_cors import CORS # type: ignore
 
 from connection import connect_to_database
 from mysql.connector import Error
@@ -651,25 +651,30 @@ def initialitation(codedMac):
     
     # Consultar datos en la base de datos
     try:
-        total = 0
         cursor = connection.cursor()        
-        query_2 = "SELECT dispositivos.id_dispositivo, cliente.id_cliente FROM cliente JOIN dispositivos ON dispositivos.Wifi_MacAddress=\""+str(decodedMAC)+"\";"
-        cursor.execute(query_2)
+        query_2 = '''
+                SELECT dispositivos.id, clientes.id, clientes.id_persona 
+                FROM dispositivos 
+                JOIN clientes ON clientes.id_dispositivo = dispositivos.id
+                WHERE dispositivos.Wifi_MacAddress = %s;
+                '''
+        cursor.execute(query_2, (decodedMAC,))
         # Obtener el resultado
         res1 = cursor.fetchone()
+        id_cliente = res1[1]
         
         # Verificar si se obtuvo un resultado
         if res1 is None:
             return jsonify({"error": "El dispositivo no esta registrado."}), 500
         
-        query_3 = "SELECT id_cliente, SUM(presion) FROM presion WHERE id_cliente=%s AND fecha BETWEEN %s AND %s;"
-        params = (str(res1[1]), fecha+" 00:00:00", fecha+" 23:59:59")
+        query_3 = "SELECT SUM(presion) FROM presion WHERE id_cliente=%s AND fecha BETWEEN %s AND %s;"
+        params = (id_cliente, fecha+" 00:00:00", fecha+" 23:59:59")
         cursor.execute(query_3, params)
 
         # Obtener el resultado
         res1 = cursor.fetchone()
 
-        return jsonify({"res": "Datos obtenidos correctamente", "id_cliente": res1[0], "volumen_Litros": res1[1]/60}), 200
+        return jsonify({"res": "Datos obtenidos correctamente", "id_cliente": id_cliente, "volumen_Litros": res1[0]/60}), 200
     except Error as e:
         print("Error al consultar los datos", e)
         return jsonify({"error": "Error al consultar los datos"}), 500
