@@ -1,3 +1,4 @@
+from email.utils import parsedate_to_datetime
 import secrets
 import string
 from flask import Flask, request, jsonify
@@ -7,12 +8,15 @@ from datetime import datetime, timedelta
 from flask_jwt_extended import JWTManager, create_access_token, get_jwt, jwt_required, get_jwt_identity # type: ignore
 from flask_cors import CORS # type: ignore
 
+from Models import Pais
 from connection import connect_to_database
 from mysql.connector import Error
 
 from Models.Usuario import Usuario
 from Models.Cliente import Cliente
 from Models.Persona import Persona
+
+from collections import namedtuple
 
 LIMIT_LH = 60.0
 
@@ -115,6 +119,11 @@ def get_presion_all():
         params = (fecha+" 00:00:00", fecha+" 23:59:59")
         cursor.execute(query_3, params)
         res = cursor.fetchone()
+        # Verifica si hay datos reales en las columnas
+        if res is None or all(value is None for value in res):  # Todas las columnas son NULL
+            print("La consulta no devolvió datos.")
+            return jsonify({"msg": "El usuario no ha consumido nada de agua hoy", "dataAVG": dataAVG, "dataSUM": dataSUM}), 200
+
         dataAVG["today"] = res[0]
         dataSUM["today"] = res[1]/60
         
@@ -122,6 +131,11 @@ def get_presion_all():
         params = (fecha1+" 00:00:00", ayer+" 23:59:59")
         cursor.execute(query_3, params)
         res1 = cursor.fetchone()
+        # Verifica si hay datos reales en las columnas
+        if res1 is None or all(value is None for value in res1):  # Todas las columnas son NULL
+            print("La consulta no devolvió datos.")
+            return jsonify({"msg": "El usuario no ha consumido nada de agua hoy", "dataAVG": dataAVG, "dataSUM": dataSUM}), 200
+
         dataAVG["LastWeek"] = res1[0]
         dataSUM["LastWeek"] = res1[1]/60
 
@@ -189,12 +203,10 @@ def get_data_client(id_cliente):
             personas.apm,
             personas.fech_nac,
             personas.sex,
-            dispositivos.Wifi_MacAddress,
             colonias.nombre AS colonia_nombre,
             colonias.asentamiento,
-            colonias.ciudad,
+            municipios.nombre,
             colonias.codigo_postal,
-            usuarios.id AS usuario_id,
             usuarios.username,
             usuarios.rol,
             usuarios.last_session,
@@ -202,11 +214,11 @@ def get_data_client(id_cliente):
         FROM
             clientes
         JOIN 
-            dispositivos ON dispositivos.id = clientes.id_dispositivo
-        JOIN 
             personas ON personas.id = clientes.id_persona
         JOIN 
             colonias ON colonias.id = personas.id_colonia
+        JOIN 
+            municipios ON municipios.id = colonias.municipio
         JOIN 
             usuarios ON usuarios.id_persona = clientes.id_persona
         WHERE
@@ -217,8 +229,6 @@ def get_data_client(id_cliente):
         res = cursor.fetchone()
 
         dataRes = {
-
-            "id_persona": res[17],
             
             "estado_servicio": res[1],
             "fecha_contratacion": res[2],
@@ -229,15 +239,16 @@ def get_data_client(id_cliente):
             "fech_nac": res[6],
             "sex": res[7],
 
-            "colonia_nombre": res[9],
-            "asentamiento": res[10],
-            "ciudad": res[11],
-            "codigo_postal": res[12],
+            "colonia_nombre": res[8],
+            "asentamiento": res[9],
+            "ciudad": res[10],
+            "codigo_postal": res[11],
 
-            "id_user": res[13],
-            "username": res[14],
-            "rol": res[15],
-            "last_session": res[16]
+            "username": res[12],
+            "rol": res[13],
+            "last_session": res[14],
+
+            "id_persona": res[15]
         }
 
         ######################################################################
@@ -395,6 +406,7 @@ def actualizar_datos_personales(id_persona):
             cursor.close()
             connection.close()
             print("Conexión a la base de datos cerrada.")
+
 @app.route('/obtener-presion/<id_cliente>', methods=['GET'])
 def get_presion(id_cliente):
     try:
@@ -424,6 +436,12 @@ def get_presion(id_cliente):
         params = (id_cliente, fecha+" 00:00:00", fecha+" 23:59:59")
         cursor.execute(query_3, params)
         res = cursor.fetchone()
+
+        # Verifica si hay datos reales en las columnas
+        if res is None or all(value is None for value in res):  # Todas las columnas son NULL
+            print("La consulta no devolvió datos.")
+            return jsonify({"msg": "El usuario no ha consumido nada de agua hoy", "dataAVG": dataAVG, "dataSUM": dataSUM}), 200
+
         dataAVG["today"] = res[0]
         dataSUM["today"] = res[1]/60
         
@@ -431,6 +449,11 @@ def get_presion(id_cliente):
         params = (id_cliente, fecha1+" 00:00:00", ayer+" 23:59:59")
         cursor.execute(query_3, params)
         res1 = cursor.fetchone()
+                # Verifica si hay datos reales en las columnas
+        if res1 is None or all(value is None for value in res1):  # Todas las columnas son NULL
+            print("La consulta no devolvió datos.")
+            return jsonify({"msg": "El usuario apenas se registró hoy", "dataAVG": dataAVG, "dataSUM": dataSUM}), 200
+
         dataAVG["LastWeek"] = res1[0]
         dataSUM["LastWeek"] = res1[1]/60
 
@@ -459,18 +482,94 @@ def get_presion(id_cliente):
 # ============== RESERVADO PARA ADMINISTRADORES ============== #
 # QUERY's - REPORTES
 @app.route('/obtener-all-reportes', methods=['GET'])
+def get_all_reports():
+    try:
+        connection = connect_to_database(); # Conectar a la base de datos
+        print("Conexión a la base de datos ABIERTA.")
+        cursor = connection.cursor(); # Crear un cursor para ejecutar las consultas
+
+        ##########################################################################
+
+        insert_query = "SELECT * FROM reportes;"
+        cursor.execute(insert_query)
+
+        data = convertToObject(cursor);
+        
+        ##########################################################################
+
+        # Cerrar la conexión
+        cursor.close()
+        connection.close()
+        print("Conexión a la base de datos cerrada.")
+        return jsonify(data), 200
+    except Error as e:
+        connection.rollback()
+        return jsonify({"error": e.msg}), 500
+    finally:
+        # Cerrar el cursor y la conexión
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+            print("Conexión a la base de datos cerrada.")
+
 @app.route('/obtener-reporte/<id_reporte>', methods=['GET'])
 @app.route('/update-reporte/<id_reporte>', methods=['PUT'])
 # Query's - SUSPENSIÓN
-@app.route('/registrar-suspension/<id_cliente>', methods=['POST'])
+@app.route('/registrar-suspension', methods=['POST'])
+def create_suspension():
+    try:
+        connection = connect_to_database(); # Conectar a la base de datos
+        print("Conexión a la base de datos ABIERTA.")
+        cursor = connection.cursor(); # Crear un cursor para ejecutar las consultas
+        ######################################################################
+
+        # Extrae los datos del ESP32 enviados en formato JSON
+        data = request.json
+        motivo = data.get('motivo')
+        duracion_dias = data.get('duracion')
+        id_cliente = data.get('id_cliente')
+
+        sql = "SELECT * FROM suspensiones WHERE id_cliente=%s;"
+        params = (id_cliente,)
+        cursor.execute(sql, params);
+
+        res = cursor.fetchall();
+        if res:
+            fecha = str(res[0][4].date())
+            # Convertir la cadena a datetime
+            fecha_obj = datetime.strptime(fecha, "%a, %d %b %Y %H:%M:%S GMT")
+            # Incrementar un día
+            fecha_incrementada = fecha_obj + timedelta(days=1)
+            #if(fecha_incrementada > datetime.now().date()):
+            return jsonify({"info": "El servicio esta suspendido", "fechas": fecha_incrementada, "now":str(datetime.now().date())}), 200
+
+
+        sql = "INSERT INTO suspensiones (motivo, duracion_dias, id_cliente) VALUES (%s, %s,%s);"
+        cursor.execute(sql, (motivo, duracion_dias, id_cliente));
+
+        sql = "UPDATE clientes SET estado_servicio=1 WHERE id=%s;"
+        cursor.execute(sql, (id_cliente,));
+
+        ######################################################################
+        # Confirmar cambios
+        connection.commit()
+        cursor.close()
+        connection.close()
+        print("Conexión a la base de datos cerrada.")
+        return jsonify({"msg": "Se suspendio el servicio con éxito"}), 200
+    except Error as e:
+        connection.rollback()
+        return jsonify({"error": e.msg}), 500
+    finally:
+        # Cerrar el cursor y la conexión
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+            print("Conexión a la base de datos cerrada.")
+
 @app.route('/obtener-suspension-by-client/<id_cliente>', methods=['GET'])
 @app.route('/obtener-all-suspension', methods=['GET'])
 @app.route('/actualizar-suspension/<id_cliente>', methods=['PUT'])
-# Query's - INCIDENTES
-@app.route('/registrar-incidente', methods=['POST'])
-@app.route('/actualizar-incidente', methods=['PUT'])
-@app.route('/obtener-incidente/<id_incidente>', methods=['GET'])
-@app.route('/obtener-all-incidentes', methods=['GET'])
 # Query's - ADMINISTRADORES
 @app.route('/registrar-admin', methods=['POST'])
 @app.route('/obtener-admin/<id_admin>', methods=['GET'])
@@ -507,15 +606,70 @@ def gets_all_clients():
     cursor = connection.cursor(); # Crear un cursor para ejecutar las consultas
     
     try:
-        insert_query = "SELECT * FROM clientes;"
+        insert_query = '''
+        SELECT
+            clientes.id,
+            clientes.estado_servicio,
+            clientes.fecha_contratacion,
+            personas.nombre,
+            personas.app,
+            personas.apm,
+            personas.fech_nac,
+            personas.sex,
+            colonias.nombre AS colonia_nombre,
+            colonias.asentamiento,
+            municipios.nombre,
+            colonias.codigo_postal,
+            usuarios.username,
+            usuarios.rol,
+            usuarios.last_session,
+            personas.id
+        FROM
+            clientes
+        JOIN 
+            personas ON personas.id = clientes.id_persona
+        JOIN 
+            colonias ON colonias.id = personas.id_colonia
+        JOIN 
+            municipios ON municipios.id = colonias.municipio
+        JOIN 
+            usuarios ON usuarios.id_persona = clientes.id_persona
+        '''
         cursor.execute(insert_query)
         # Obtener el resultado
         res = cursor.fetchall()
 
+        allClients = []
+
+        for row in res:           
+            dataRes = {
+                "id": row[0],
+                "estado_servicio": row[1],
+                "fecha_contratacion": row[2],
+
+                "nombre": row[3],
+                "app": row[4],
+                "apm": row[5],
+                "fech_nac": row[6],
+                "sex": row[7],
+
+                "colonia_nombre": row[8],
+                "asentamiento": row[9],
+                "ciudad": row[10],
+                "codigo_postal": row[11],
+
+                "username": row[12],
+                "rol": row[13],
+                "last_session": row[14],
+
+                "id_persona": row[15]
+            }
+            allClients.append(dataRes)
+
         cursor.close()
         connection.close()
         print("Conexión a la base de datos cerrada.")
-        return jsonify({"clientes": res}), 200
+        return jsonify(allClients), 200
     except Error as e:
         connection.rollback()
         return jsonify({"error": e.msg}), 500
@@ -527,15 +681,18 @@ def gets_all_clients():
             print("Conexión a la base de datos cerrada.")
 
 @app.route('/registrar-cliente', methods=['POST'])
-@jwt_required()
+#@jwt_required()
 def registrar_cliente():
-    # Obtener el rol desde los claims del JWT
+    '''
+        # Obtener el rol desde los claims del JWT
     claims = get_jwt()  # Obtener la identidad (username) del token
     role = claims.get("role")
 
     # Verificar que el usuario tiene el rol de administrador o Capturista
     if role == 0 or role == 2: # 0 == Cliente, 2 == Técnico
         return jsonify({"mensaje":"No tienes autorizado el acceso."}), 403
+
+    '''
 
     try:
         connection = connect_to_database(); # Conectar a la base de datos
@@ -573,18 +730,14 @@ def registrar_cliente():
         # Despues un cliente
         cliente = Cliente();
         cliente.id_persona = persona.id;
-        cliente.fecha_contratacion = datetime.date(datetime.datetime.now().year,
-                                                   datetime.datetime.now().month,
-                                                   datetime.datetime.now().day);
         # Extraer los atributos del objeto Cliente como una tupla
         Cliente_data = (
             cliente.id_persona,
-            cliente.fecha_contratacion,
             cliente.estado_servicio
         )
         insert_query2 = """ INSERT INTO clientes
-        (id_persona, fecha_contratacion, estado_servicio)
-        VALUES (%s, %s, %s) """
+        (id_persona, estado_servicio)
+        VALUES (%s, %s) """
         cursor.execute(insert_query2, Cliente_data)
 
         # Al final se crea su usuario
@@ -623,12 +776,159 @@ def registrar_cliente():
             print("Conexión a la base de datos cerrada.")
 
 
+
+@app.route('/get-paises', methods=['GET'])
+def get_paises():
+    
+    connection = connect_to_database(); # Conectar a la base de datos
+    print("Conexión a la base de datos ABIERTA.")
+    cursor = connection.cursor(); # Crear un cursor para ejecutar las consultas
+    
+    try:
+        # Obtener los nombres de las columnas
+
+        insert_query = "SELECT id, nombre FROM paises;"
+        cursor.execute(insert_query)
+
+        data = convertToObject(cursor);
+        
+        cursor.close()
+        connection.close()
+        print("Conexión a la base de datos cerrada.")
+        return jsonify(data), 200
+    
+    except Error as e:
+        connection.rollback()
+        return jsonify({"error": e.msg}), 500
+    finally:
+        # Cerrar el cursor y la conexión
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+            print("Conexión a la base de datos cerrada.")
+
+@app.route('/get-estados/<id_pais>', methods=['GET'])
+def get_estados(id_pais):
+    
+    connection = connect_to_database(); # Conectar a la base de datos
+    print("Conexión a la base de datos ABIERTA.")
+    cursor = connection.cursor(); # Crear un cursor para ejecutar las consultas
+    
+    try:
+
+        insert_query = "SELECT id, nombre FROM estados WHERE pais=%s;"
+        cursor.execute(insert_query, (id_pais,))
+
+        data = convertToObject(cursor);
+
+        cursor.close()
+        connection.close()
+        print("Conexión a la base de datos cerrada.")
+        return jsonify(data), 200
+    
+    except Error as e:
+        connection.rollback()
+        return jsonify({"error": e.msg}), 500
+    finally:
+        # Cerrar el cursor y la conexión
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+            print("Conexión a la base de datos cerrada.")
+
+@app.route('/get-municipios/<id_estado>', methods=['GET'])
+def get_municipios(id_estado):
+    
+    connection = connect_to_database(); # Conectar a la base de datos
+    print("Conexión a la base de datos ABIERTA.")
+    cursor = connection.cursor(); # Crear un cursor para ejecutar las consultas
+    
+    try:
+
+        insert_query = "SELECT id, nombre FROM municipios WHERE estado=%s;"
+        cursor.execute(insert_query, (id_estado,))
+
+        data = convertToObject(cursor);
+
+        cursor.close()
+        connection.close()
+        print("Conexión a la base de datos cerrada.")
+        return jsonify(data), 200
+    
+    except Error as e:
+        connection.rollback()
+        return jsonify({"error": e.msg}), 500
+    finally:
+        # Cerrar el cursor y la conexión
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+            print("Conexión a la base de datos cerrada.")
+
+@app.route('/get-colonias/<id_municipio>', methods=['GET'])
+def get_colonias(id_municipio):
+    
+    connection = connect_to_database(); # Conectar a la base de datos
+    print("Conexión a la base de datos ABIERTA.")
+    cursor = connection.cursor(); # Crear un cursor para ejecutar las consultas
+    
+    try:
+
+        insert_query = "SELECT id, nombre FROM colonias WHERE municipio=%s;"
+        cursor.execute(insert_query, (id_municipio,))
+        data = convertToObject(cursor);
+
+        cursor.close()
+        connection.close()
+        print("Conexión a la base de datos cerrada.")
+        return jsonify(data), 200
+    
+    except Error as e:
+        connection.rollback()
+        return jsonify({"error": e.msg}), 500
+    finally:
+        # Cerrar el cursor y la conexión
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+            print("Conexión a la base de datos cerrada.")
+
 # ============== RESERVADO PARA CONSULTAS DEL OLAP ============== #
 
 
 
 # ============== RESERVADO PARA TÉCNICOS ============== #
+@app.route('/registrar-dispositivo', methods=['POST'])
+def registrar_dispositivo():
+    try:
+        connection = connect_to_database(); # Conectar a la base de datos
+        print("Conexión a la base de datos ABIERTA.")
+        cursor = connection.cursor(); # Crear un cursor para ejecutar las consultas
+        ######################################################################
 
+        # Extrae los datos del ESP32 enviados en formato JSON
+        data = request.json
+        id_cliente = data.get('id_cliente')
+        Wifi_MacAddress = data.get('Wifi_MacAddress')
+        sql = "INSERT INTO dispositivos (id_cliente, Wifi_MacAddress) VALUES (%s,%s);"
+        cursor.execute(sql, (id_cliente, Wifi_MacAddress));
+
+        ######################################################################
+        # Confirmar cambios
+        connection.commit()
+        cursor.close()
+        connection.close()
+        print("Conexión a la base de datos cerrada.")
+        return jsonify({"msg": "El dispositivo fue creado con éxito"}), 200
+    except Error as e:
+        connection.rollback()
+        return jsonify({"error": e.msg}), 500
+    finally:
+        # Cerrar el cursor y la conexión
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+            print("Conexión a la base de datos cerrada.")
 
 # ============== IoT y Servidor ============== #
 # Se obtienen los datos iniciales: id_cliente y volumen_Litros
@@ -727,6 +1027,18 @@ def generate_Pass(longitud=12):
     caracteres = string.ascii_letters + string.digits
     contrasena = ''.join(secrets.choice(caracteres) for i in range(longitud))
     return contrasena
+
+def convertToObject(cursor):
+    columnas = [column[0] for column in cursor.description]  # Obtiene los nombres de las columnas
+    # Usar namedtuple para tratar las filas como objetos
+    TABLE = namedtuple('TABLE', columnas)  # Crear una clase con los nombres de las columnas como atributos
+    response = cursor.fetchall()
+
+    # Crear una lista de objetos Pais
+    object_data = [TABLE(*row) for row in response]
+    # Retornar la respuesta como JSON con los nombres de las columnas y los datos
+    return [object._asdict() for object in object_data]  # Convertir namedtuple a diccionario para JSON
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

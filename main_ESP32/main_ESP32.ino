@@ -4,7 +4,7 @@
 
 const char* ssid = "SpartanLuck 117";
 const char* password = "numeroPI141592";
-const String serverUrl = "http://192.168.166.162:5000";
+const String serverUrl = "http://192.168.1.64:5000";
 
 int id_cliente;
 String macAddress;  // Variable global para almacenar la dirección MAC
@@ -31,6 +31,7 @@ void setup() {
   Serial.print("Ip addres: ");
   Serial.println(WiFi.localIP());
   macAddress = WiFi.macAddress();  // Obtiene la dirección MAC
+  Serial.println(macAddress);
   initMain();
   //ELECTROVÁLVULA
   //RELEVADOR

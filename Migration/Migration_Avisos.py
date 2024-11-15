@@ -9,5 +9,5 @@ CREATE TABLE IF NOT EXISTS `avisos` (
   `hora_i` datetime NOT NULL,
   PRIMARY KEY (`id`),
   KEY `FK_Admin_198437` (`id_admin`) USING BTREE,
-  CONSTRAINT `FK_Admin_198437` FOREIGN KEY (`id_admin`) REFERENCES `administradores` (`id`));
+  CONSTRAINT `FK_Admin_198437` FOREIGN KEY (`id_admin`) REFERENCES `personas` (`id`));
 '''
