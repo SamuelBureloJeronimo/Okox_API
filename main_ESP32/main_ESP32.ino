@@ -10,7 +10,7 @@ int id_cliente;
 String macAddress;  // Variable global para almacenar la dirección MAC
 float volumen_Litros;       // Volumen total en litros
 // Pines y Variables
-const int sensorPin = 22;       // Pin de entrada para el sensor YF-S201
+const int sensorPin = 15;       // Pin de entrada para el sensor YF-S201
 volatile int pulsos = 0;        // Contador de pulsos
 float factorCalibracion = 7.5;  // Factor de calibración para el sensor (ajustar según el modelo y pruebas)
 float flujo_Lmin = 0;           // Flujo en L/min
@@ -32,10 +32,12 @@ void setup() {
   Serial.println(WiFi.localIP());
   macAddress = WiFi.macAddress();  // Obtiene la dirección MAC
   Serial.println(macAddress);
+
   initMain();
   //ELECTROVÁLVULA
   //RELEVADOR
   pinMode(relePin, OUTPUT); // Configura el pin del relé como salida
+  digitalWrite(relePin, HIGH);
 
   //SENSOR DE FLUJO DE AGUA
   pinMode(sensorPin, INPUT_PULLUP);    // Configura el pin del sensor como entrada
@@ -90,7 +92,7 @@ void SendData_WaterFlow()
     if (httpResponseCode == 200) {
       String response = http.getString();
       Serial.println(response);
-      //OpenCloseValvula(response);
+      OpenCloseValvula(response);
     } else {
       Serial.print("1.- Error en la conexión: ");
       Serial.println(httpResponseCode);

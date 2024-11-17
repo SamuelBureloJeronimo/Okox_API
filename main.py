@@ -5,8 +5,9 @@ from flask import Flask, request, jsonify
 import urllib.parse
 from datetime import datetime, timedelta
 
-from flask_jwt_extended import JWTManager, create_access_token, get_jwt, jwt_required, get_jwt_identity # type: ignore
-from flask_cors import CORS # type: ignore
+from flask_jwt_extended import JWTManager, create_access_token, decode_token, get_jwt, jwt_required, get_jwt_identity # type: ignore
+from flask_cors import CORS
+from jwt import InvalidTokenError, ExpiredSignatureError, DecodeError
 
 from Models import Pais
 from connection import connect_to_database
@@ -18,14 +19,15 @@ from Models.Persona import Persona
 
 from collections import namedtuple
 
-LIMIT_LH = 60.0
+LIMIT_LH = 7.0
 
 app = Flask(__name__)
 # Habilitar CORS para todos los orígenes y rutas
 CORS(app)
 
 # Configura una clave secreta para firmar los tokens
-app.config["JWT_SECRET_KEY"] = "CLAVE-ULTRA-SECRETA"
+LLAVE_JWT = "CLAVE-ULTRA-SECRETA"
+app.config["JWT_SECRET_KEY"] = LLAVE_JWT
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=0.5)  # El token expira en 1 hora
 
 # Inicializa el manejador de JWT
@@ -53,12 +55,12 @@ def login():
         # Obtener el resultado
         res1 = cursor.fetchone()
 
-        rol = res1[4]
-
         if res1 == None:
             return jsonify({"message": "Credenciales invalidas"}), 400
         elif res1[2] != username or res1[3] != password:
             return jsonify({"message": "Credenciales invalidas"}), 400
+
+        rol = res1[4]
 
         # Crea un token de acceso
         access_token = create_access_token(identity=username, additional_claims={"role": res1[4]})
@@ -122,10 +124,9 @@ def get_presion_all():
         # Verifica si hay datos reales en las columnas
         if res is None or all(value is None for value in res):  # Todas las columnas son NULL
             print("La consulta no devolvió datos.")
-            return jsonify({"msg": "El usuario no ha consumido nada de agua hoy", "dataAVG": dataAVG, "dataSUM": dataSUM}), 200
-
-        dataAVG["today"] = res[0]
-        dataSUM["today"] = res[1]/60
+        else:
+            dataAVG["today"] = res[0]
+            dataSUM["today"] = res[1]/60
         
         query_3 = "SELECT AVG(presion), SUM(presion) FROM presion WHERE fecha BETWEEN %s AND %s;"
         params = (fecha1+" 00:00:00", ayer+" 23:59:59")
@@ -134,17 +135,20 @@ def get_presion_all():
         # Verifica si hay datos reales en las columnas
         if res1 is None or all(value is None for value in res1):  # Todas las columnas son NULL
             print("La consulta no devolvió datos.")
-            return jsonify({"msg": "El usuario no ha consumido nada de agua hoy", "dataAVG": dataAVG, "dataSUM": dataSUM}), 200
-
-        dataAVG["LastWeek"] = res1[0]
-        dataSUM["LastWeek"] = res1[1]/60
+        else:
+            dataAVG["LastWeek"] = res1[0]
+            dataSUM["LastWeek"] = res1[1]/60
 
         query_3 = "SELECT AVG(presion), SUM(presion) FROM presion WHERE fecha BETWEEN %s AND %s;"
         params = (fecha2+" 00:00:00", ayer+" 23:59:59")
         cursor.execute(query_3, params)
         res2 = cursor.fetchone()
-        dataAVG["LastMonth"] = res2[0]
-        dataSUM["LastMonth"] = res2[1]/60
+        # Verifica si hay datos reales en las columnas
+        if res2 is None or all(value is None for value in res2):  # Todas las columnas son NULL
+            print("La consulta no devolvió datos.")
+        else:
+            dataAVG["LastMonth"] = res2[0]
+            dataSUM["LastMonth"] = res2[1]/60
         
         ######################################################################
         cursor.close()
@@ -440,10 +444,9 @@ def get_presion(id_cliente):
         # Verifica si hay datos reales en las columnas
         if res is None or all(value is None for value in res):  # Todas las columnas son NULL
             print("La consulta no devolvió datos.")
-            return jsonify({"msg": "El usuario no ha consumido nada de agua hoy", "dataAVG": dataAVG, "dataSUM": dataSUM}), 200
-
-        dataAVG["today"] = res[0]
-        dataSUM["today"] = res[1]/60
+        else:
+            dataAVG["today"] = res[0]
+            dataSUM["today"] = res[1]/60
         
         query_3 = "SELECT AVG(presion), SUM(presion) FROM presion WHERE id_cliente=%s AND fecha BETWEEN %s AND %s;"
         params = (id_cliente, fecha1+" 00:00:00", ayer+" 23:59:59")
@@ -452,17 +455,19 @@ def get_presion(id_cliente):
                 # Verifica si hay datos reales en las columnas
         if res1 is None or all(value is None for value in res1):  # Todas las columnas son NULL
             print("La consulta no devolvió datos.")
-            return jsonify({"msg": "El usuario apenas se registró hoy", "dataAVG": dataAVG, "dataSUM": dataSUM}), 200
-
-        dataAVG["LastWeek"] = res1[0]
-        dataSUM["LastWeek"] = res1[1]/60
+        else:
+            dataAVG["LastWeek"] = res1[0]
+            dataSUM["LastWeek"] = res1[1]/60
 
         query_3 = "SELECT AVG(presion), SUM(presion) FROM presion WHERE id_cliente=%s AND fecha BETWEEN %s AND %s;"
         params = (id_cliente, fecha2+" 00:00:00", ayer+" 23:59:59")
         cursor.execute(query_3, params)
         res2 = cursor.fetchone()
-        dataAVG["LastMonth"] = res2[0]
-        dataSUM["LastMonth"] = res2[1]/60
+        if res2 is None or all(value is None for value in res2):  # Todas las columnas son NULL
+            print("La consulta no devolvió datos.")
+        else:
+            dataAVG["LastMonth"] = res2[0]
+            dataSUM["LastMonth"] = res2[1]/60
         
         ######################################################################
         cursor.close()
@@ -953,19 +958,19 @@ def initialitation(codedMac):
     try:
         cursor = connection.cursor()        
         query_2 = '''
-                SELECT dispositivos.id, clientes.id, clientes.id_persona 
-                FROM dispositivos 
-                JOIN clientes ON clientes.id_dispositivo = dispositivos.id
+                SELECT clientes.id 
+                FROM clientes 
+                JOIN dispositivos ON dispositivos.id_cliente = clientes.id
                 WHERE dispositivos.Wifi_MacAddress = %s;
                 '''
         cursor.execute(query_2, (decodedMAC,))
         # Obtener el resultado
         res1 = cursor.fetchone()
-        id_cliente = res1[1]
-        
         # Verificar si se obtuvo un resultado
         if res1 is None:
             return jsonify({"error": "El dispositivo no esta registrado."}), 500
+        
+        id_cliente = res1[0]
         
         query_3 = "SELECT SUM(presion) FROM presion WHERE id_cliente=%s AND fecha BETWEEN %s AND %s;"
         params = (id_cliente, fecha+" 00:00:00", fecha+" 23:59:59")
@@ -974,6 +979,9 @@ def initialitation(codedMac):
         # Obtener el resultado
         res1 = cursor.fetchone()
 
+        if(res1[0] is None):
+            return jsonify({"res": "Datos obtenidos correctamente", "id_cliente": id_cliente, "volumen_Litros": 0}), 200    
+        
         return jsonify({"res": "Datos obtenidos correctamente", "id_cliente": id_cliente, "volumen_Litros": res1[0]/60}), 200
     except Error as e:
         print("Error al consultar los datos", e)
@@ -1001,6 +1009,16 @@ def recibir_datos():
     
     if float(volumen_Litros) > LIMIT_LH:
         cursor = connection.cursor()
+        hora_actual = datetime.now()
+        fecha = str(hora_actual.year)+"-"+str(hora_actual.month)+"-"+str(hora_actual.day)
+        query = "SELECT * FROM suspensiones WHERE id_cliente=%s AND fecha BETWEEN %s AND %s;"
+        cursor.execute(query, (id_cliente, fecha+" 00:00:00", fecha+" 23:59:59"));
+
+        res = cursor.fetchall()
+
+        if(res):
+            return jsonify(), 200;
+    
         insert_query = "INSERT INTO suspensiones (motivo,id_cliente) VALUES ('Limite diario excedido',"+id_cliente+")"
         cursor.execute(insert_query)
         connection.commit()
@@ -1022,6 +1040,28 @@ def recibir_datos():
         return jsonify({"error": "Error al guardar datos"}), 500
     finally:
         connection.close()
+
+@app.route('/auth-token', methods=['GET'])
+def auth_token():
+    # Obtener el token desde el encabezado o cuerpo de la solicitud
+    token = request.headers.get('Authorization')
+    if not token:
+        return jsonify({"error": "Token no proporcionado"}), 401
+
+    # Remover el prefijo "Bearer " si está presente
+    if token.startswith("Bearer "):
+        token = token.split("Bearer ")[1]
+
+    try:
+        # Decodificar el token
+        decoded = decode_token(token)
+        return jsonify({"message": "Token válido", "rol": decoded["role"]}), 200
+    except ExpiredSignatureError:
+        return jsonify({"error": "Token expirado"}), 401
+    except InvalidTokenError:
+        return jsonify({"error": "Token inválido"}), 401
+    except DecodeError:
+        return jsonify({"error": "Error al decodificar el token"}), 400
 
 def generate_Pass(longitud=12):
     caracteres = string.ascii_letters + string.digits
