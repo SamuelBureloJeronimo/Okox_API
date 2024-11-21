@@ -15,7 +15,7 @@ volatile int pulsos = 0;        // Contador de pulsos
 float factorCalibracion = 7.5;  // Factor de calibración para el sensor (ajustar según el modelo y pruebas)
 float flujo_Lmin = 0;           // Flujo en L/min
 
-const int relePin = 23; // Pin donde está conectado el relé
+const int relePin = 13; // Pin donde está conectado el relé
 unsigned long tiempoAnterior = 0; // Variable para el cálculo de intervalos de tiempo
 
 void setup() {
