@@ -19,7 +19,7 @@ from Models.Persona import Persona
 
 from collections import namedtuple
 
-LIMIT_LH = 7.0
+LIMIT_LH = 8.5
 
 app = Flask(__name__)
 # Habilitar CORS para todos los orígenes y rutas
@@ -1017,7 +1017,7 @@ def recibir_datos():
         res = cursor.fetchall()
 
         if(res):
-            return jsonify(), 200;
+            return jsonify({"st": 901}), 200;
     
         insert_query = "INSERT INTO suspensiones (motivo,id_cliente) VALUES ('Limite diario excedido',"+id_cliente+")"
         cursor.execute(insert_query)

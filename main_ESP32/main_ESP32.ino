@@ -4,7 +4,7 @@
 
 const char* ssid = "SpartanLuck 117";
 const char* password = "numeroPI141592";
-const String serverUrl = "http://192.168.1.64:5000";
+const String serverUrl = "http://192.168.188.162:5000";
 
 int id_cliente;
 String macAddress;  // Variable global para almacenar la dirección MAC
@@ -104,6 +104,7 @@ void SendData_WaterFlow()
 }
 
 void OpenCloseValvula(String response) {
+
     // Reserva espacio para el análisis del JSON
     StaticJsonDocument<200> doc;
     DeserializationError error = deserializeJson(doc, response);
@@ -114,7 +115,13 @@ void OpenCloseValvula(String response) {
         Serial.println(error.f_str());
         return;
     }
-
+    
+    if(doc["st"] == 901){
+        digitalWrite(relePin, LOW); // Inicialmente apagado (relé en alto)
+        Serial.println("Cerrando válvula...");
+      return;
+    }
+    
     // Acceder a los valores
     int cod = doc["cod"];           // Obtiene el valor de "cod"
     const char* res = doc["res"];    // Obtiene el valor de "res"
