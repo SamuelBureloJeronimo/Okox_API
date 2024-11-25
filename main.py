@@ -19,7 +19,7 @@ from Models.Persona import Persona
 
 from collections import namedtuple
 
-LIMIT_LH = 8.5
+LIMIT_LH = 25.0
 
 app = Flask(__name__)
 # Habilitar CORS para todos los orígenes y rutas
@@ -956,7 +956,8 @@ def initialitation(codedMac):
     
     # Consultar datos en la base de datos
     try:
-        cursor = connection.cursor()        
+        cursor = connection.cursor()
+
         query_2 = '''
                 SELECT clientes.id 
                 FROM clientes 
@@ -969,8 +970,12 @@ def initialitation(codedMac):
         # Verificar si se obtuvo un resultado
         if res1 is None:
             return jsonify({"error": "El dispositivo no esta registrado."}), 500
-        
+            
         id_cliente = res1[0]
+        query = "SELECT * FROM suspensiones WHERE id_cliente=%s AND fecha BETWEEN %s AND %s;"
+        cursor.execute(query, (id_cliente, fecha+" 00:00:00", fecha+" 23:59:59"));
+
+        res = cursor.fetchall()        
         
         query_3 = "SELECT SUM(presion) FROM presion WHERE id_cliente=%s AND fecha BETWEEN %s AND %s;"
         params = (id_cliente, fecha+" 00:00:00", fecha+" 23:59:59")
@@ -978,6 +983,12 @@ def initialitation(codedMac):
 
         # Obtener el resultado
         res1 = cursor.fetchone()
+
+        
+        if(res):
+            if(res1[0] is None):
+                return jsonify({"st": 901, "id_cliente": id_cliente, "volumen_Litros": 0}), 200; 
+            return jsonify({"st": 901, "id_cliente": id_cliente, "volumen_Litros": res1[0]/60}), 200;   
 
         if(res1[0] is None):
             return jsonify({"res": "Datos obtenidos correctamente", "id_cliente": id_cliente, "volumen_Litros": 0}), 200    
@@ -1006,35 +1017,35 @@ def recibir_datos():
     if connection is None:
         return jsonify({"error": "No se pudo conectar a la base de datos"}), 500
     
-    
-    if float(volumen_Litros) > LIMIT_LH:
-        cursor = connection.cursor()
-        hora_actual = datetime.now()
-        fecha = str(hora_actual.year)+"-"+str(hora_actual.month)+"-"+str(hora_actual.day)
-        query = "SELECT * FROM suspensiones WHERE id_cliente=%s AND fecha BETWEEN %s AND %s;"
-        cursor.execute(query, (id_cliente, fecha+" 00:00:00", fecha+" 23:59:59"));
-
-        res = cursor.fetchall()
-
-        if(res):
-            return jsonify({"st": 901}), 200;
-    
-        insert_query = "INSERT INTO suspensiones (motivo,id_cliente) VALUES ('Limite diario excedido',"+id_cliente+")"
-        cursor.execute(insert_query)
-        connection.commit()
-        cursor.close()
-        return jsonify({"res": "Tu consumo a superado los "+str(LIMIT_LH)+"L por hora"}), 200
-
-    
-
     # Insertar datos en la base de datos
-    try:
+    try:   
+        if float(volumen_Litros) >= LIMIT_LH:
+            cursor = connection.cursor()
+            hora_actual = datetime.now()
+            fecha = str(hora_actual.year)+"-"+str(hora_actual.month)+"-"+str(hora_actual.day)
+            query = "SELECT * FROM suspensiones WHERE id_cliente=%s AND fecha BETWEEN %s AND %s;"
+            cursor.execute(query, (id_cliente, fecha+" 00:00:00", fecha+" 23:59:59"));
+
+            res = cursor.fetchall()
+
+            if(res):
+                return jsonify({"st": 901}), 200
+   
+            insert_query = "INSERT INTO suspensiones (motivo,id_cliente) VALUES ('Limite diario excedido',"+id_cliente+")"
+            cursor.execute(insert_query)
+            insert_query = "INSERT INTO presion (presion, id_cliente) VALUES (%s, %s);"
+            cursor.execute(insert_query, (presion, id_cliente))
+            connection.commit()
+            cursor.close()
+            return jsonify({"res": "Tu servicio a sido suspendido por superar los "+str(LIMIT_LH)+"L por día."}), 200
+
+
         cursor = connection.cursor()
-        insert_query = "INSERT INTO presion (presion,id_cliente) VALUES ("+presion+","+id_cliente+")"
-        cursor.execute(insert_query)
+        insert_query = "INSERT INTO presion (presion, id_cliente) VALUES (%s, %s);"
+        cursor.execute(insert_query, (presion, id_cliente))
         connection.commit()
         cursor.close()
-        return jsonify({"status": "Datos guardados correctamente"}), 200
+        return jsonify({"status": "Datos guardados correctamente", "cod": 101}), 200
     except Error as e:
         print("Error al insertar datos", e)
         return jsonify({"error": "Error al guardar datos"}), 500

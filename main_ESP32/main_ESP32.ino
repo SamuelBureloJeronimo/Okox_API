@@ -4,19 +4,20 @@
 
 const char* ssid = "SpartanLuck 117";
 const char* password = "numeroPI141592";
-const String serverUrl = "http://192.168.188.162:5000";
+const String serverUrl = "http://192.168.1.64:5000";
 
-int id_cliente;
-String macAddress;  // Variable global para almacenar la dirección MAC
-float volumen_Litros;       // Volumen total en litros
+int id_cliente = -1;
+String macAddress = "";  // Variable global para almacenar la dirección MAC
+float volumen_Litros = 0.0;       // Volumen total en litros
 // Pines y Variables
 const int sensorPin = 15;       // Pin de entrada para el sensor YF-S201
 volatile int pulsos = 0;        // Contador de pulsos
 float factorCalibracion = 7.5;  // Factor de calibración para el sensor (ajustar según el modelo y pruebas)
 float flujo_Lmin = 0;           // Flujo en L/min
 
-const int relePin = 13; // Pin donde está conectado el relé
+const int relePin = 16; // Pin donde está conectado el relé
 unsigned long tiempoAnterior = 0; // Variable para el cálculo de intervalos de tiempo
+bool limit_Supered = true;
 
 void setup() {
   Serial.begin(9600);  
@@ -37,7 +38,6 @@ void setup() {
   //ELECTROVÁLVULA
   //RELEVADOR
   pinMode(relePin, OUTPUT); // Configura el pin del relé como salida
-  digitalWrite(relePin, HIGH);
 
   //SENSOR DE FLUJO DE AGUA
   pinMode(sensorPin, INPUT_PULLUP);    // Configura el pin del sensor como entrada
@@ -117,25 +117,24 @@ void OpenCloseValvula(String response) {
     }
     
     if(doc["st"] == 901){
+        limit_Supered = true;
         digitalWrite(relePin, LOW); // Inicialmente apagado (relé en alto)
         Serial.println("Cerrando válvula...");
+          Serial.println("LOS SERVICIOS FUERON SUSPENDIDOS.");
       return;
-    }
+    } 
     
     // Acceder a los valores
     int cod = doc["cod"];           // Obtiene el valor de "cod"
     const char* res = doc["res"];    // Obtiene el valor de "res"
     if(cod == 101){
       Serial.println(res);
-      if(digitalRead(relePin) == HIGH){
-        Serial.println("Cerrando válvula...");
-      }
-        digitalWrite(relePin, LOW); // Inicialmente apagado (relé en alto)
+      digitalWrite(relePin, HIGH); // Inicialmente apagado (relé en alto)
+      Serial.println("Abriendo válvula...");
     } else {
-      if(digitalRead(relePin) == LOW){
-        Serial.println("Abriendo válvula...");
-      }
-        digitalWrite(relePin, HIGH); // Inicialmente apagado (relé en alto)
+      digitalWrite(relePin, LOW); // Inicialmente apagado (relé en alto)
+      Serial.println("Cerrando válvula...");
+      Serial.println("LIMITE DIARIO ALCANZADO.");
     }
 }
 
@@ -163,8 +162,23 @@ void initMain(){
           Serial.println(error.f_str());
       }
 
-      id_cliente = doc["id_cliente"];
-      volumen_Litros = doc["volumen_Litros"];
+      if(doc["st"]){
+        if(doc["st"] == 901){
+          id_cliente = doc["id_cliente"];          
+          digitalWrite(relePin, LOW); // Inicialmente apagado (relé en alto)
+          Serial.println("LIMITE DIARIO ALCANZADO.");
+          Serial.println("Cerrando válvula...");
+          volumen_Litros = doc["volumen_Litros"];
+        }
+
+      } else {
+        id_cliente = doc["id_cliente"];
+        volumen_Litros = doc["volumen_Litros"];
+          Serial.println("EL DISPOSITIVO INICIO CORRECTAMENTE.");
+          digitalWrite(relePin, HIGH); // Inicialmente apagado (relé en alto)
+          Serial.println("Abriendo válvula...");
+      }
+
 
     } else {
       Serial.print("Error en la petición: ");
