@@ -19,7 +19,8 @@ from Models.Persona import Persona
 
 from collections import namedtuple
 
-LIMIT_LH = 25.0
+limite_diario = 1.0
+REBT = 1.0
 
 app = Flask(__name__)
 # Habilitar CORS para todos los orígenes y rutas
@@ -327,8 +328,13 @@ def get_noti(id_cliente):
 
         ##########################################################################
 
-        insert_query = "SELECT * FROM suspensiones WHERE id_cliente="+id_cliente+";"
-        cursor.execute(insert_query)
+        insert_query = '''
+                        SELECT mensaje FROM
+                            notificaciones
+                        WHERE
+                            cliente_id=%s;
+                        '''
+        cursor.execute(insert_query, (id_cliente,))
         # Obtener el resultado
         res = cursor.fetchall()
         
@@ -436,7 +442,7 @@ def get_presion(id_cliente):
         fecha1 = str(hora_actual.year)+"-"+str(hora_actual.month)+"-"+str(hora_actual.day-7)
         fecha2 = str(hora_actual.year)+"-"+str(hora_actual.month-1)+"-"+str(hora_actual.day)
 
-        query_3 = "SELECT AVG(presion), SUM(presion) FROM presion WHERE id_cliente=%s AND fecha BETWEEN %s AND %s;"
+        query_3 = "SELECT AVG(presion.presion), clientes.Litros_totales_dia FROM presion JOIN clientes ON clientes.id=presion.id_cliente WHERE id_cliente=%s AND fecha BETWEEN %s AND %s;"
         params = (id_cliente, fecha+" 00:00:00", fecha+" 23:59:59")
         cursor.execute(query_3, params)
         res = cursor.fetchone()
@@ -446,9 +452,8 @@ def get_presion(id_cliente):
             print("La consulta no devolvió datos.")
         else:
             dataAVG["today"] = res[0]
-            dataSUM["today"] = res[1]/60
+            dataSUM["today"] = res[1]
         
-        query_3 = "SELECT AVG(presion), SUM(presion) FROM presion WHERE id_cliente=%s AND fecha BETWEEN %s AND %s;"
         params = (id_cliente, fecha1+" 00:00:00", ayer+" 23:59:59")
         cursor.execute(query_3, params)
         res1 = cursor.fetchone()
@@ -457,9 +462,8 @@ def get_presion(id_cliente):
             print("La consulta no devolvió datos.")
         else:
             dataAVG["LastWeek"] = res1[0]
-            dataSUM["LastWeek"] = res1[1]/60
+            dataSUM["LastWeek"] = res1[1]
 
-        query_3 = "SELECT AVG(presion), SUM(presion) FROM presion WHERE id_cliente=%s AND fecha BETWEEN %s AND %s;"
         params = (id_cliente, fecha2+" 00:00:00", ayer+" 23:59:59")
         cursor.execute(query_3, params)
         res2 = cursor.fetchone()
@@ -467,7 +471,7 @@ def get_presion(id_cliente):
             print("La consulta no devolvió datos.")
         else:
             dataAVG["LastMonth"] = res2[0]
-            dataSUM["LastMonth"] = res2[1]/60
+            dataSUM["LastMonth"] = res2[1]
         
         ######################################################################
         cursor.close()
@@ -562,6 +566,54 @@ def create_suspension():
         connection.close()
         print("Conexión a la base de datos cerrada.")
         return jsonify({"msg": "Se suspendio el servicio con éxito"}), 200
+    except Error as e:
+        connection.rollback()
+        return jsonify({"error": e.msg}), 500
+    finally:
+        # Cerrar el cursor y la conexión
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+            print("Conexión a la base de datos cerrada.")
+
+@app.route('/restablecer-servicios/<id_cliente>', methods=['PUT'])
+def rest(id_cliente):
+    try:
+        connection = connect_to_database(); # Conectar a la base de datos
+        print("Conexión a la base de datos ABIERTA.")
+        cursor = connection.cursor(); # Crear un cursor para ejecutar las consultas
+        ######################################################################
+        query = "SELECT * FROM clientes WHERE id=%s;"
+        cursor.execute(query, (id_cliente,));
+
+        res = cursor.fetchone()
+
+        if(res is None):
+                return jsonify({"Error": "Cliente no encontrado ID="+id_cliente}), 200
+        
+
+        insert_query1 = """
+            UPDATE clientes 
+            SET estado_servicio = 0,
+            umbral_max = %s 
+            WHERE id = %s;
+            """
+        cursor.execute(insert_query1, (res[5]+res[6],id_cliente));
+
+        insert_query1 = """
+            INSERT INTO notificaciones (cliente_id, mensaje) VALUES (%s, %s);
+            """
+        cursor.execute(insert_query1, (id_cliente,"Servicios restablecidos"));
+    
+        ######################################################################
+        # Confirmar cambios
+        connection.commit()
+        global limite_diario  # Indicamos que queremos usar la variable global
+        limite_diario = limite_diario+REBT;
+        cursor.close()
+        connection.close()
+        print("Conexión a la base de datos cerrada.")
+        return jsonify({"msg": "Se restablecieron los servicios con éxito"}), 200
     except Error as e:
         connection.rollback()
         return jsonify({"error": e.msg}), 500
@@ -939,6 +991,7 @@ def registrar_dispositivo():
 # Se obtienen los datos iniciales: id_cliente y volumen_Litros
 @app.route('/initialitation/<codedMac>', methods=['GET'])
 def initialitation(codedMac):
+    
     hora_actual = datetime.now()
     fecha = str(hora_actual.year)+"-"+str(hora_actual.month)+"-"+str(hora_actual.day)
 
@@ -959,7 +1012,9 @@ def initialitation(codedMac):
         cursor = connection.cursor()
 
         query_2 = '''
-                SELECT clientes.id 
+                SELECT clientes.id,
+                clientes.Litros_totales_dia,
+                clientes.estado_servicio
                 FROM clientes 
                 JOIN dispositivos ON dispositivos.id_cliente = clientes.id
                 WHERE dispositivos.Wifi_MacAddress = %s;
@@ -972,12 +1027,10 @@ def initialitation(codedMac):
             return jsonify({"error": "El dispositivo no esta registrado."}), 500
             
         id_cliente = res1[0]
-        query = "SELECT * FROM suspensiones WHERE id_cliente=%s AND fecha BETWEEN %s AND %s;"
-        cursor.execute(query, (id_cliente, fecha+" 00:00:00", fecha+" 23:59:59"));
-
-        res = cursor.fetchall()        
+        Litros_totales_dia = res1[1]
+        estado_servicio = res1[2]
         
-        query_3 = "SELECT SUM(presion) FROM presion WHERE id_cliente=%s AND fecha BETWEEN %s AND %s;"
+        query_3 = "SELECT AVG(presion.presion), clientes.Litros_totales_dia FROM presion JOIN clientes ON clientes.id=presion.id_cliente WHERE id_cliente=%s AND fecha BETWEEN %s AND %s;"
         params = (id_cliente, fecha+" 00:00:00", fecha+" 23:59:59")
         cursor.execute(query_3, params)
 
@@ -985,15 +1038,10 @@ def initialitation(codedMac):
         res1 = cursor.fetchone()
 
         
-        if(res):
-            if(res1[0] is None):
-                return jsonify({"st": 901, "id_cliente": id_cliente, "volumen_Litros": 0}), 200; 
-            return jsonify({"st": 901, "id_cliente": id_cliente, "volumen_Litros": res1[0]/60}), 200;   
+        if(estado_servicio == 1):
+            return jsonify({"st": 901, "id_cliente": id_cliente, "volumen_Litros": Litros_totales_dia}), 200;   
 
-        if(res1[0] is None):
-            return jsonify({"res": "Datos obtenidos correctamente", "id_cliente": id_cliente, "volumen_Litros": 0}), 200    
-        
-        return jsonify({"res": "Datos obtenidos correctamente", "id_cliente": id_cliente, "volumen_Litros": res1[0]/60}), 200
+        return jsonify({"res": "Datos obtenidos correctamente", "id_cliente": id_cliente, "volumen_Litros": Litros_totales_dia}), 200
     except Error as e:
         print("Error al consultar los datos", e)
         return jsonify({"error": "Error al consultar los datos"}), 500
@@ -1019,36 +1067,67 @@ def recibir_datos():
     
     # Insertar datos en la base de datos
     try:   
-        if float(volumen_Litros) >= LIMIT_LH:
-            cursor = connection.cursor()
-            hora_actual = datetime.now()
-            fecha = str(hora_actual.year)+"-"+str(hora_actual.month)+"-"+str(hora_actual.day)
-            query = "SELECT * FROM suspensiones WHERE id_cliente=%s AND fecha BETWEEN %s AND %s;"
-            cursor.execute(query, (id_cliente, fecha+" 00:00:00", fecha+" 23:59:59"));
+        cursor = connection.cursor()
+        query = "SELECT * FROM clientes WHERE id=%s;"
+        cursor.execute(query, (id_cliente,));
 
-            res = cursor.fetchall()
+        res = cursor.fetchone()
 
-            if(res):
-                return jsonify({"st": 901}), 200
+        if(res is None):
+                return jsonify({"Error": "Cliente no encontrado ID="+id_cliente}), 200
+        
+        if float(res[2]) == 1:
+            return jsonify({"st": 901}), 200
+        
+        if float(volumen_Litros) >= float(res[5]):
    
-            insert_query = "INSERT INTO suspensiones (motivo,id_cliente) VALUES ('Limite diario excedido',"+id_cliente+")"
-            cursor.execute(insert_query)
+            insert_query = "INSERT INTO suspensiones (motivo,id_cliente) VALUES ('Limite diario excedido',%s);"
+            cursor.execute(insert_query, (id_cliente,))
+
+            insert_query = "INSERT INTO notificaciones (cliente_id, mensaje) VALUES (%s, 'Limite diario excedido');"
+            cursor.execute(insert_query, (id_cliente,))
+            
             insert_query = "INSERT INTO presion (presion, id_cliente) VALUES (%s, %s);"
             cursor.execute(insert_query, (presion, id_cliente))
+
+            insert_query = "UPDATE clientes SET Litros_totales_dia=%s, estado_servicio=1 WHERE id=%s;"
+            cursor.execute(insert_query, (volumen_Litros, id_cliente))
+
             connection.commit()
             cursor.close()
-            return jsonify({"res": "Tu servicio a sido suspendido por superar los "+str(LIMIT_LH)+"L por día."}), 200
+            return jsonify({"res": "Tu servicio a sido suspendido por superar los "+str(res[5])+"L por dia."}), 200
 
+        if(float(presion) > 1.0):
+            cursor = connection.cursor()
+            insert_query = "INSERT INTO presion (presion, id_cliente) VALUES (%s, %s);"
+            cursor.execute(insert_query, (presion, id_cliente))
 
-        cursor = connection.cursor()
-        insert_query = "INSERT INTO presion (presion, id_cliente) VALUES (%s, %s);"
-        cursor.execute(insert_query, (presion, id_cliente))
-        connection.commit()
-        cursor.close()
-        return jsonify({"status": "Datos guardados correctamente", "cod": 101}), 200
+            insert_query = "UPDATE clientes SET Litros_totales_dia=%s WHERE id=%s;"
+            cursor.execute(insert_query, (volumen_Litros, id_cliente))
+
+            connection.commit()
+            cursor.close()
+            
+            return jsonify({"status": "Datos guardados correctamente", "cod": 101}), 200
+        else:
+            insert_query = "INSERT INTO suspensiones (motivo,id_cliente) VALUES ('Limite diario excedido',%s);"
+            cursor.execute(insert_query, (id_cliente,))
+
+            insert_query = "INSERT INTO notificaciones (cliente_id, mensaje) VALUES (%s, 'Servicio suspendido por baja presión');"
+            cursor.execute(insert_query, (id_cliente,))
+            
+            insert_query = "INSERT INTO presion (presion, id_cliente) VALUES (%s, %s);"
+            cursor.execute(insert_query, (presion, id_cliente))
+
+            insert_query = "UPDATE clientes SET Litros_totales_dia=%s, estado_servicio=1 WHERE id=%s;"
+            cursor.execute(insert_query, (volumen_Litros, id_cliente))
+
+            connection.commit()
+            cursor.close()
+            return jsonify({"res": "Tu servicio a sido suspendido por baja presión. Es posible que haya fugas."}), 200
     except Error as e:
         print("Error al insertar datos", e)
-        return jsonify({"error": "Error al guardar datos"}), 500
+        return jsonify({"error": "Error al insertar o actualizar datos"}), 500
     finally:
         connection.close()
 
