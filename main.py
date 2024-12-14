@@ -170,19 +170,7 @@ def get_presion_all():
 # ======== CONSULTAS SOLO PARA CLIENTES REGISTRADOS ======== #
 # QUERY's - CLIENTES
 @app.route('/obtener-data-cliente/<id_cliente>', methods=['GET'])
-#@jwt_required()
 def get_data_client(id_cliente):
-
-    '''
-    # Obtener el rol desde los claims del JWT
-    claims = get_jwt()  # Obtener la identidad (username) del token
-    role = claims.get("role")
-
-    # Verificar que el usuario tiene el rol de administrador o Capturista
-    if role == 1 or role == 3: # 0 == Cliente, 2 == Técnico
-        return jsonify({"mensaje":"No tienes autorizado el acceso."}), 403
-    
-    '''
     try:
         connection = connect_to_database(); # Conectar a la base de datos
         print("Conexión a la base de datos ABIERTA.")
@@ -356,17 +344,7 @@ def get_noti(id_cliente):
             print("Conexión a la base de datos cerrada.")
 #QUERY's - PERSONAS
 @app.route('/actualizar-datos-personales/<id_persona>', methods=['PUT'])
-#@jwt_required()
 def actualizar_datos_personales(id_persona):
-    '''
-    # Obtener el rol desde los claims del JWT
-    claims = get_jwt()  # Obtener la identidad (username) del token
-    role = claims.get("role")
-
-    # Verificar que el usuario tiene el rol de administrador o Capturista
-    if role == 1 or role == 3: # 0 == Cliente, 2 == Técnico
-        return jsonify({"mensaje":"No tienes autorizado el acceso."}), 403
-    '''
     try:
         connection = connect_to_database(); # Conectar a la base de datos
         print("Conexión a la base de datos ABIERTA.")
@@ -624,39 +602,10 @@ def rest(id_cliente):
             connection.close()
             print("Conexión a la base de datos cerrada.")
 
-@app.route('/obtener-suspension-by-client/<id_cliente>', methods=['GET'])
-@app.route('/obtener-all-suspension', methods=['GET'])
-@app.route('/actualizar-suspension/<id_cliente>', methods=['PUT'])
-# Query's - ADMINISTRADORES
-@app.route('/registrar-admin', methods=['POST'])
-@app.route('/obtener-admin/<id_admin>', methods=['GET'])
-@app.route('/obtener-all-admin', methods=['GET'])
-@app.route('/eliminar-admin', methods=['DELETE'])
-# Query's - AVISOS
-@app.route('/registrar-aviso', methods=['POST'])
-@app.route('/obtener-aviso/<id_aviso>', methods=['GET'])
-@app.route('/obtener-all-avisos', methods=['GET'])
-@app.route('/actualizar-aviso/<id_aviso>', methods=['PUT'])
-# Query's - DISPOSITIVOS
-@app.route('/obtener-dispostivo/<id_dispositivo>', methods=['GET'])
-@app.route('/obtener-all-dispostivo', methods=['GET'])
-@app.route('/actualizar-dispostivo/<id_dispostivo>', methods=['PUT'])
-
 # ============== RESERVADO PARA CAPTURISTAS Y ADMINISTRADORES ============== #
 # Query's - CLIENTES
 @app.route('/obtener-all-clientes', methods=['GET'])
-#@jwt_required()
 def gets_all_clients():
-    '''
-    # Obtener el rol desde los claims del JWT
-    claims = get_jwt()  # Obtener la identidad (username) del token
-    role = claims.get("role")
-
-    # Verificar que el usuario tiene el rol de administrador o Capturista
-    if role == 0 or role == 2: # 0 == Cliente, 2 == Técnico
-        return jsonify({"mensaje":"No tienes autorizado el acceso."}), 403
-    
-    '''
     
     connection = connect_to_database(); # Conectar a la base de datos
     print("Conexión a la base de datos ABIERTA.")
@@ -738,19 +687,7 @@ def gets_all_clients():
             print("Conexión a la base de datos cerrada.")
 
 @app.route('/registrar-cliente', methods=['POST'])
-#@jwt_required()
 def registrar_cliente():
-    '''
-        # Obtener el rol desde los claims del JWT
-    claims = get_jwt()  # Obtener la identidad (username) del token
-    role = claims.get("role")
-
-    # Verificar que el usuario tiene el rol de administrador o Capturista
-    if role == 0 or role == 2: # 0 == Cliente, 2 == Técnico
-        return jsonify({"mensaje":"No tienes autorizado el acceso."}), 403
-
-    '''
-
     try:
         connection = connect_to_database(); # Conectar a la base de datos
         print("Conexión a la base de datos ABIERTA.")
