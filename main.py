@@ -93,6 +93,7 @@ def login():
             cursor.close()
             connection.close()
             print("Conexión a la base de datos cerrada.")
+            
 @app.route('/obtener-all-presion', methods=['GET'])
 def get_presion_all():
     try:

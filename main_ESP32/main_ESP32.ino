@@ -22,7 +22,6 @@ bool limit_Supered = true;
 void setup() {
   Serial.begin(9600);  
   
-  
   //ELECTROVÁLVULA
   //RELEVADOR
   pinMode(relePin, OUTPUT); // Configura el pin del relé como salida
