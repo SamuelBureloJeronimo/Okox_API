@@ -1,0 +1,1 @@
+db2dbml mysql 'mysql://sparta:1415@localhost:3306/okox_pruebas' -o ./utils/database.dbml

@@ -1,0 +1,43 @@
+# Entorno virtual
+venv/
+env/
+ENV/
+*.env
+
+# Configuración de Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.log
+
+# Archivos y carpetas generados por Flask
+instance/
+*.sqlite3
+*.db
+
+# Archivos de configuración de Flask
+*.cfg
+*.ini
+
+# Archivos sensibles
+*.key
+*.pem
+
+# Archivos de compilación
+build/
+dist/
+*.egg-info/
+
+# IDEs y editores
+.vscode/
+
+# Logs y datos temporales
+logs/
+*.log
+*.tmp
+*.bak
+
+# Archivos de Jupyter Notebook (si usas notebooks en tu proyecto)
+.ipynb_checkpoints/

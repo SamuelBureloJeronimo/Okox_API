@@ -1,0 +1,188 @@
+Table "clientes" {
+  "rfc" varchar(13) [pk, not null]
+  "estado_servicio" int
+  "fecha_contratacion" datetime [not null]
+}
+
+Table "colonias" {
+  "id" int [pk, not null, increment]
+  "nombre" varchar(100) [not null]
+  "ciudad" varchar(100) [not null]
+  "municipio" int
+  "asentamiento" varchar(100)
+  "codigo_postal" int
+
+  Indexes {
+    municipio [type: btree, name: "municipio"]
+  }
+}
+
+Table "dispositivos" {
+  "Wifi_MacAddress" varchar(17) [pk, not null]
+  "rfc" varchar(13) [not null]
+
+  Indexes {
+    rfc [type: btree, name: "rfc"]
+  }
+}
+
+Table "estados" {
+  "id" int [pk, not null, increment]
+  "nombre" varchar(100) [not null]
+  "pais" int
+
+  Indexes {
+    pais [type: btree, name: "pais"]
+  }
+}
+
+Table "mantenimientos" {
+  "id" int [pk, not null, increment]
+  "titulo" varchar(80) [not null]
+  "descripcion" varchar(200) [not null]
+  "fecha" datetime [not null]
+  "colonia_afectada" int [not null]
+
+  Indexes {
+    colonia_afectada [type: btree, name: "colonia_afectada"]
+  }
+}
+
+Table "motivo_suspensiones" {
+  "id" int [pk, not null, increment]
+  "nombre" varchar(30) [not null]
+  "descripcion" text [not null]
+}
+
+Table "municipios" {
+  "id" int [pk, not null, increment]
+  "nombre" varchar(100) [not null]
+  "estado" int
+
+  Indexes {
+    estado [type: btree, name: "estado"]
+  }
+}
+
+Table "notificaciones" {
+  "id" int [pk, not null, increment]
+  "rfc" varchar(13)
+  "asunto" varchar(80) [not null]
+  "descripcion" varchar(200) [not null]
+  "tipo" varchar(80) [not null]
+  "fecha_envio" varchar(80) [not null]
+
+  Indexes {
+    rfc [type: btree, name: "rfc"]
+  }
+}
+
+Table "pagos" {
+  "id" int [pk, not null, increment]
+  "rfc" varchar(13) [not null]
+  "comprobante" mediumblob [not null]
+  "monto" float [not null]
+  "fecha_pago" datetime [not null]
+  "fecha_subida" datetime [not null]
+
+  Indexes {
+    rfc [type: btree, name: "rfc"]
+  }
+}
+
+Table "paises" {
+  "id" int [pk, not null, increment]
+  "nombre" varchar(100) [not null]
+}
+
+Table "personas" {
+  "rfc" varchar(13) [pk, not null]
+  "nombre" varchar(100) [not null]
+  "app" varchar(100) [not null]
+  "apm" varchar(100) [not null]
+  "fech_nac" datetime [not null]
+  "sex" varchar(1) [not null]
+  "id_colonia" int [not null]
+
+  Indexes {
+    id_colonia [type: btree, name: "id_colonia"]
+  }
+}
+
+Table "reportes_fugas" {
+  "id" int [pk, not null, increment]
+  "rfc" varchar(13) [not null]
+  "foto" mediumblob [not null]
+  "mensaje" varchar(500) [not null]
+  "atendido" tinyint(1) [not null]
+  "id_colonia" int [not null]
+
+  Indexes {
+    id_colonia [type: btree, name: "id_colonia"]
+    rfc [type: btree, name: "rfc"]
+  }
+}
+
+Table "sensores_log" {
+  "id" int [pk, not null, increment]
+  "Wifi_MacAddress" varchar(17) [not null]
+  "presion" float [not null]
+  "fecha" datetime [not null]
+
+  Indexes {
+    Wifi_MacAddress [type: btree, name: "Wifi_MacAddress"]
+  }
+}
+
+Table "suspensiones" {
+  "id" int [pk, not null, increment]
+  "rfc" varchar(13) [not null]
+  "motivo_id" int [not null]
+  "duracion_suspension" datetime [not null]
+  "fecha" datetime [not null]
+
+  Indexes {
+    motivo_id [type: btree, name: "motivo_id"]
+    rfc [type: btree, name: "rfc"]
+  }
+}
+
+Table "usuarios" {
+  "id" int [pk, not null, increment]
+  "id_persona" varchar(13) [unique, not null]
+  "username" varchar(50) [not null]
+  "password" varchar(255) [not null]
+  "token" varchar(255)
+  "rol" int
+  "last_session" datetime
+}
+
+Ref "clientes_ibfk_1":"personas"."rfc" < "clientes"."rfc"
+
+Ref "colonias_ibfk_1":"municipios"."id" < "colonias"."municipio"
+
+Ref "dispositivos_ibfk_1":"clientes"."rfc" < "dispositivos"."rfc"
+
+Ref "estados_ibfk_1":"paises"."id" < "estados"."pais"
+
+Ref "mantenimientos_ibfk_1":"colonias"."id" < "mantenimientos"."colonia_afectada"
+
+Ref "municipios_ibfk_1":"estados"."id" < "municipios"."estado"
+
+Ref "notificaciones_ibfk_1":"clientes"."rfc" < "notificaciones"."rfc"
+
+Ref "pagos_ibfk_1":"clientes"."rfc" < "pagos"."rfc"
+
+Ref "personas_ibfk_1":"colonias"."id" < "personas"."id_colonia"
+
+Ref "reportes_fugas_ibfk_1":"clientes"."rfc" < "reportes_fugas"."rfc"
+
+Ref "reportes_fugas_ibfk_2":"colonias"."id" < "reportes_fugas"."id_colonia"
+
+Ref "sensores_log_ibfk_1":"dispositivos"."Wifi_MacAddress" < "sensores_log"."Wifi_MacAddress"
+
+Ref "suspensiones_ibfk_1":"clientes"."rfc" < "suspensiones"."rfc"
+
+Ref "suspensiones_ibfk_2":"motivo_suspensiones"."id" < "suspensiones"."motivo_id"
+
+Ref "usuarios_ibfk_1":"personas"."rfc" < "usuarios"."id_persona"
