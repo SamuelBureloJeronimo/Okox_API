@@ -17,7 +17,8 @@ class Personas(Base):
     # Relación: cada estado está relacionado con un Pais (con un Pais específico)
     Colonias = relationship("Colonias", backref="personas")
 
-    def __init__(self, nombre, app, apm=None, fech_nac=None, sex="", id_colonia=None):
+    def __init__(self, rfc, nombre, app, apm=None, fech_nac=None, sex="", id_colonia=None):
+        self.rfc = rfc
         self.nombre = nombre
         self.app = app
         self.apm = apm

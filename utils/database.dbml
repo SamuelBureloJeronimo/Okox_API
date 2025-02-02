@@ -1,7 +1,14 @@
 Table "clientes" {
   "rfc" varchar(13) [pk, not null]
-  "estado_servicio" int
+  "id_umbral" int [not null]
+  "id_company" int [not null]
+  "estado_servicio" int [not null]
   "fecha_contratacion" datetime [not null]
+
+  Indexes {
+    id_company [type: btree, name: "id_company"]
+    id_umbral [type: btree, name: "id_umbral"]
+  }
 }
 
 Table "colonias" {
@@ -17,9 +24,21 @@ Table "colonias" {
   }
 }
 
+Table "company" {
+  "id" int [pk, not null, increment]
+  "rfc" varchar(13) [unique, not null]
+  "logo" varchar(255)
+  "nombre" varchar(50)
+  "descripcion" text
+  "facebook" varchar(150)
+  "linkedIn" varchar(150)
+  "link_x" varchar(150)
+}
+
 Table "dispositivos" {
   "Wifi_MacAddress" varchar(17) [pk, not null]
   "rfc" varchar(13) [not null]
+  "last_connection" datetime
 
   Indexes {
     rfc [type: btree, name: "rfc"]
@@ -100,7 +119,7 @@ Table "personas" {
   "nombre" varchar(100) [not null]
   "app" varchar(100) [not null]
   "apm" varchar(100) [not null]
-  "fech_nac" datetime [not null]
+  "fech_nac" date [not null]
   "sex" varchar(1) [not null]
   "id_colonia" int [not null]
 
@@ -124,10 +143,11 @@ Table "reportes_fugas" {
 }
 
 Table "sensores_log" {
-  "id" int [pk, not null, increment]
+  "fecha" datetime [pk, not null]
   "Wifi_MacAddress" varchar(17) [not null]
   "presion" float [not null]
-  "fecha" datetime [not null]
+  "caudal" float [not null]
+  "litros_consumidos" float [not null]
 
   Indexes {
     Wifi_MacAddress [type: btree, name: "Wifi_MacAddress"]
@@ -147,19 +167,31 @@ Table "suspensiones" {
   }
 }
 
-Table "usuarios" {
+Table "umbral_clientes" {
   "id" int [pk, not null, increment]
-  "id_persona" varchar(13) [unique, not null]
-  "username" varchar(50) [not null]
-  "password" varchar(255) [not null]
+  "min_L" float [not null]
+  "max_L" float [not null]
+}
+
+Table "usuarios" {
+  "rfc" varchar(13) [pk, not null]
+  "email" varchar(50) [unique, not null]
+  "username" varchar(50) [unique, not null]
+  "password" varchar(255)
   "token" varchar(255)
-  "rol" int
+  "rol" int [note: '# 0 == Cliente, 1 == Capturista, 2 == Técnico, 3 == Administrador, 4 = Compañia']
   "last_session" datetime
 }
 
 Ref "clientes_ibfk_1":"personas"."rfc" < "clientes"."rfc"
 
+Ref "clientes_ibfk_2":"umbral_clientes"."id" < "clientes"."id_umbral"
+
+Ref "clientes_ibfk_3":"company"."id" < "clientes"."id_company"
+
 Ref "colonias_ibfk_1":"municipios"."id" < "colonias"."municipio"
+
+Ref "company_ibfk_1":"personas"."rfc" < "company"."rfc"
 
 Ref "dispositivos_ibfk_1":"clientes"."rfc" < "dispositivos"."rfc"
 
@@ -185,4 +217,4 @@ Ref "suspensiones_ibfk_1":"clientes"."rfc" < "suspensiones"."rfc"
 
 Ref "suspensiones_ibfk_2":"motivo_suspensiones"."id" < "suspensiones"."motivo_id"
 
-Ref "usuarios_ibfk_1":"personas"."rfc" < "usuarios"."id_persona"
+Ref "usuarios_ibfk_1":"personas"."rfc" < "usuarios"."rfc"

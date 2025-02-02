@@ -1,16 +1,16 @@
-from datetime import datetime
 from flask_cors import CORS
-from flask import Flask, jsonify, send_file
-import os
-
-import urllib
+from flask import Flask, jsonify, request, send_from_directory
 
 from database.db import *
+
+import os
 
 from models.Personas import Personas
 from models.Usuarios import Usuarios
 
+
 # Modelos para el administrador
+from models.Company import Company
 from models.Motivo_Suspensiones import Motivo_Suspensiones
 from models.Suspensiones import Suspensiones
 from models.Mantenimientos import Mantenimientos
@@ -30,49 +30,48 @@ from models.Sensores_Log import Sensores_Log
 from models.Pagos import Pagos
 from models.Dispositivos import Dispositivos
 from models.Notificaciones import Notificaciones
+from models.Umbral_Clientes import Umbral_Clientes
+
+from routes.Dispositivo_routes import BP_dispositivo
+from routes.Company_routes import BP_Company
+from routes.Cliente_routes import BP_Clientes
+
+# Cargar variables desde el archivo .env
+load_dotenv()
+
+if not os.path.exists(os.getenv("UPLOAD_FOLDER")):
+    os.makedirs(os.getenv("UPLOAD_FOLDER"))
 
 app = Flask(__name__)
+app.register_blueprint(BP_dispositivo)
+app.register_blueprint(BP_Company)
+app.register_blueprint(BP_Clientes)
+
 # Habilitar CORS para todos los orígenes y rutas
 CORS(app)
 
-@app.route('/download', methods=['GET'])
-def download_file():
-    # Ruta del archivo .bin dentro de la carpeta "public"
-    file_path = os.path.join(os.getcwd(), 'public', 'Okox.ino.bin')
-    
-    # Verifica si el archivo existe
-    if os.path.exists(file_path):
-        # Envía el archivo .bin como respuesta
-        return send_file(file_path, as_attachment=True, download_name="Okox.ino.bin")
-    else:
-        return "File not found", 404
+@app.route('/image/<path:filename>')
+def public_files(filename):
+    return send_from_directory('public/image', filename)
 
-# ============== IoT y Servidor ============== #
-# Se obtienen los datos iniciales: id_cliente y volumen_Litros
-@app.route('/init_device/<codedMac>', methods=['GET'])
-def initialitation(codedMac):
+@app.route('/login', methods=["GET"])
+def login():
+    required_fields = ["email", "password"]
+    missing_fields = [field for field in required_fields if not request.form.get(field)]
 
-    # Extrae los datos del ESP32 enviados en formato JSON
-    # Decodificar la URL
-    # decodedMAC = urllib.parse.unquote(codedMac)
-    decodedMAC = codedMac
+    # Validar si falta algún campo
+    if missing_fields:
+        return jsonify({"error": f"Faltan los siguientes campos: {', '.join(missing_fields)}"}), 400
+    email = request.form.get("email");
+    password = request.form.get("password");
 
-    if decodedMAC is None:
-        return jsonify({"error": "Datos no válidos"}), 400
-    
-    # Suponiendo que 'engine' es tu motor de SQLAlchemy
-    session = Session()
+    user = session.query(Usuarios).filter_by(email=email, password=password).first()
 
-    # Realizar la consulta
-    disp = session.query(Dispositivos).all()
+    if user is None:
+        return jsonify({"mensaje": "Correo o contraseña incorrecto"})
 
-    # Verificar si se obtuvo un resultado
-    if disp is None:
-        print({"error": "El dispositivo no está registrado."})
-    else:
-        return jsonify({"dispositivos registrados": disp}), 200
-
+    return jsonify(user.to_dict())
 
 if __name__ == '__main__':
     Base.metadata.create_all(engine)
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)

@@ -1,20 +1,23 @@
 from database.db import Base
-from sqlalchemy import Column, Integer, Float, DateTime, String, ForeignKey
+from sqlalchemy import Column, Double, DateTime, String, ForeignKey, func
 from sqlalchemy.orm import relationship
 
 class Sensores_Log(Base):
     __tablename__ = "sensores_log"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    fecha = Column(DateTime, primary_key=True, nullable=False, default=func.now())  # Fecha y hora asociada a la presión
     Wifi_MacAddress = Column(String(17), ForeignKey('dispositivos.Wifi_MacAddress'), nullable=False)
-    presion = Column(Float, nullable=False, default=0.0)
-    fecha = Column(DateTime, nullable=False)  # Fecha y hora asociada a la presión
+    presion = Column(Double, nullable=False)
+    caudal = Column(Double, nullable=False)
+    litros_consumidos = Column(Double, nullable=False)
 
     Dispositivos = relationship("Dispositivos", backref="sensores_log")
 
-    def __init__(self, presion=0.0, id_cliente=0, fecha=None):
+    def __init__(self, Wifi_MacAddress, presion, caudal, litros_consumidos, fecha=None):
+        self.Wifi_MacAddress = Wifi_MacAddress
         self.presion = presion
-        self.id_cliente = id_cliente
+        self.caudal = caudal
+        self.litros_consumidos = litros_consumidos
         self.fecha = fecha
 
     def __repr__(self):
