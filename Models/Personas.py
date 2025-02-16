@@ -11,16 +11,18 @@ class Personas(Base):
     app = Column(String(100), nullable=False)  # Apellido paterno
     apm = Column(String(100), nullable=False)  # Apellido materno
     fech_nac = Column(Date, nullable=False)  # Fecha de nacimiento
+    tel = Column(String(25))  # Número de telefono
     sex = Column(String(1), nullable=False)  # Género ('M' o 'F')
     id_colonia = Column(Integer, ForeignKey('colonias.id'), nullable=False)  # Relación a una colonia (posiblemente otra tabla)
 
     # Relación: cada estado está relacionado con un Pais (con un Pais específico)
     Colonias = relationship("Colonias", backref="personas")
 
-    def __init__(self, rfc, nombre, app, apm=None, fech_nac=None, sex="", id_colonia=None):
+    def __init__(self, rfc, nombre, app, apm=None, fech_nac=None, tel="", sex="", id_colonia=None):
         self.rfc = rfc
         self.nombre = nombre
         self.app = app
+        self.tel = tel
         self.apm = apm
         self.fech_nac = fech_nac
         self.sex = sex

@@ -1,6 +1,7 @@
 from random import randint
 import uuid
 from flask import Blueprint, request, jsonify
+from flask_jwt_extended import get_jwt, jwt_required
 from database.db import *
 from sqlalchemy import exc
 from werkzeug.utils import secure_filename
@@ -13,6 +14,34 @@ from models.Personas import Personas
 from models.Usuarios import Usuarios
 
 BP_Clientes = Blueprint('BP_Clientes', __name__, url_prefix='/clientes')
+
+@BP_Clientes.route('/init-dashboard', methods=["GET"])
+@jwt_required()
+def init_dash_cli():
+    
+    jwt_data = get_jwt()  # Obtiene todo el payload del JWT
+    
+    email = jwt_data.get("sub")  # "sub" es el campo "identity" por defecto
+    id_company = jwt_data.get("id_company")  # Si guardaste "nombre" en el token
+
+    
+    user = session.query(Usuarios).filter_by(email=email).first();
+    company = session.query(Company).filter_by(id=id_company).first();
+
+
+    if user is None or company is None:
+        return jsonify({"email": email, "id": id_company}), 400
+
+
+    data = {
+        "email": user.email,
+        "username": user.username,
+        "img_user": user.imagen,
+        "logo": company.logo,
+        "nombre": company.nombre,
+    }
+    return jsonify(data), 200
+
 
 @BP_Clientes.route("/create", methods=["POST"])
 def create_client():
@@ -37,7 +66,8 @@ def create_client():
         rfc=request.form.get("rfc"),
         email=request.form.get("email"),
         username=request.form.get("username"),
-        password=request.form.get("password")
+        password=request.form.get("password"),
+        id_company=request.form.get("id_company")
     )
 
     cliente = Clientes(

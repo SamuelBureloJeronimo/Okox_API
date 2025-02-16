@@ -18,3 +18,10 @@ class Umbral_Clientes(Base):
 
     def __str__(self):
         return f"min={self.min}, max={self.max_L})"
+    
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "min_L": self.min_L,
+            "max_L": self.max_L
+        }

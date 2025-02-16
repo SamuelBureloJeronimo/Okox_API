@@ -9,7 +9,6 @@ class Clientes(Base):
     rfc = Column(String(13), ForeignKey('personas.rfc'), primary_key=True, unique=True)  
     id_umbral = Column(Integer, ForeignKey('umbral_clientes.id'), default=0, nullable=False)
     id_company = Column(Integer, ForeignKey('company.id'), default=0, nullable=False)
-    estado_servicio = Column(Integer, default=0, nullable=False)  # 0 == Activo, 1 == Suspendido  
     fecha_contratacion = Column(DateTime, default=func.now(), nullable=False)  # Fecha de contratación del servicio
 
     # Relación: cada estado está relacionado con un Pais (con un Pais específico)
@@ -17,11 +16,10 @@ class Clientes(Base):
     Umbral_Clientes = relationship("Umbral_Clientes", backref="clientes")
     Company = relationship("Company", backref="clientes")
 
-    def __init__(self, rfc, id_umbral, id_company, estado_servicio=0, fecha_contratacion=None):
+    def __init__(self, rfc, id_umbral, id_company, fecha_contratacion=None):
         self.rfc = rfc
         self.id_umbral = id_umbral
         self.id_company = id_company
-        self.estado_servicio = estado_servicio
         self.fecha_contratacion = fecha_contratacion
 
     def __repr__(self):

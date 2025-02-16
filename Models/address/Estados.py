@@ -22,3 +22,10 @@ class Estados(Base):
 
     def __str__(self):
         return self.nombre
+    
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "nombre": self.nombre,
+            "pais": self.pais
+        }

@@ -1,0 +1,409 @@
+Table "actions_users" {
+  "fech" datetime [pk, not null, note: 'En minutos 00 y segundos 00']
+  "rfc" varchar(13) [unique, not null, note: 'RFC del usuario que realizó la action en el sistema']
+  "log_id" varchar(40) [not null, note: 'Durante que sesion el usuario realizo esta acción']
+  "action" varchar(50) [not null, note: 'Qué acción hizo']
+}
+
+Table "actividades" {
+  "rfc_asign" varchar(13) [unique, not null, note: 'RFC de la persona que asigno la tarea']
+  "rfc_emp" varchar(13) [unique, not null, note: 'RFC del empleado al que se le asigno la tarea']
+  "nombre" varchar(100) [not null, note: 'Nombre de la actividad. Ejemplo: Limpieza de zona, rellenar biberes']
+  "desc" varchar(255) [note: 'Descripción de la tarea por si se necesitan más indicaciones']
+  "fech_in" datetime [not null, note: 'Fecha de inicio de la tarea en Dia y hora']
+  "fech_fi" datetime [not null, note: 'Fecha maximo de finalización']
+  "estado" int [not null, default: 0, note: '0 = Pendiente, 1 = Completada, 2 = Verificada, 3 = Inconcluso']
+  "observ" text [note: 'Si hubo algun problema aqui se describe']
+}
+
+Table "alimentos" {
+  "id" int [pk, not null]
+  "nombre" varchar(100) [not null, note: 'Nombre del alimento (heno, grano, etc.)']
+  "tipo" varchar(50) [not null, note: 'Tipo de alimento (forraje, concentrado, suplemento)']
+  "energia" double [not null, note: 'Nivel de energía (kcal/kg)']
+  "costo_kg_lt" double [not null, note: 'Costo por kilogramo']
+}
+
+Table "asistencias" {
+  "id" int [pk, not null]
+  "rfc_emp" varchar(13) [not null, note: 'Relación con el empleado']
+  "hora_entrada" time [note: 'Hora de entrada registrada']
+  "hora_salida" time [note: 'Hora de salida registrada']
+  "observ" text [note: 'Comentarios adicionales (retrasos, ausencias, etc.)']
+}
+
+Table "beneficios" {
+  "id" int [pk, not null]
+  "nombre" varchar(100) [note: 'Nombre del beneficio (seguro médico, bonos, etc.)']
+  "desc" text [note: 'Descripción del beneficio']
+}
+
+Table "camadas" {
+  "id" int [pk, not null]
+  "finca_id" int [not null, note: 'Relación con la finca donde se alojará la camada']
+  "rfc_prov" varchar(13) [not null, note: 'Nombre del proveedor o vendedor']
+  "fech_comp" date [not null, note: 'Fecha en la que se compró la camada']
+  "peso_prom" double [not null, note: 'Peso promedio de la camada al momento de la compra']
+  "precio_total" double [not null, note: 'Costo total de la camada']
+  "observ" text [note: 'Comentarios adicionales sobre la compra']
+}
+
+Table "chequeos" {
+  "no_arete" int [pk, not null]
+  "peso_compra" double [not null]
+  "peso_actual" double [not null]
+  "cond_corp" int
+  "frec_card" int [not null]
+  "temp_corp" float [not null]
+  "fech" datetime [not null]
+  "observ" text [not null]
+}
+
+Table "colonias" {
+  "id" int [pk, not null, increment]
+  "nombre" varchar(100) [not null]
+  "ciudad" varchar(100) [not null]
+  "municipio" int
+  "asentamiento" varchar(100)
+  "codigo_postal" int
+
+  Indexes {
+    municipio [type: btree, name: "municipio"]
+  }
+}
+
+Table "compras_ganados" {
+  "no_arete" int [pk, not null, note: 'Número de arete del ganado comprado']
+  "rfc_prov" varchar(13) [not null, note: 'Relación con la tabla Proveedores, indica el proveedor']
+  "comp_pago" blob [not null, note: 'Comprobante de pago, almacenado como un objeto binario (blob)']
+  "fech_sol" date [not null, note: 'Fecha en la que se realizó la solicitud de compra']
+  "fech_acepn" date [note: 'Fecha en la que se aceptó la compra']
+  "precio_kg" double [not null, note: 'Precio por kilogramo del ganado']
+  "peso" double [not null, note: 'Peso del ganado al momento de la compra']
+  "estatus" int [not null, default: 1, note: 'Estatus de la compra: 1 = Pendiente, 2 = Pagada, 3 = Cancelada']
+  "observ" text [note: 'Comentarios adicionales sobre la compra']
+}
+
+Table "compras_insumos" {
+  "folio" int [pk, not null, note: 'Identificador único de la compra de insumos']
+  "rfc_prov" varchar(13) [not null, note: 'Relación con la tabla Proveedores, indica el proveedor']
+  "insumo_id" int [not null, note: 'Relación con la tabla Insumos, indica el insumo comprado (alimento, vacuna, etc.)']
+  "fech" date [not null, note: 'Fecha en la que se realizó la compra']
+  "cantidad" int [not null, note: 'Cantidad de insumos comprados']
+  "precio_u" double [not null, note: 'Precio por unidad del insumo']
+  "estatus" int [not null, default: 1, note: 'Estatus de la compra: 1 = Pendiente, 2 = Pagada, 3 = Cancelada']
+  "observ" text [note: 'Comentarios adicionales sobre la compra']
+}
+
+Table "consumo" {
+  "raza_id" int [pk, not null, note: 'Relación con la tabla Razas']
+  "alimento_id" int [not null, note: 'Relación con la tabla Alimentos, indica el alimento consumido']
+  "fecha" date [not null, note: 'Fecha en que se registró el consumo']
+  "cantidad_kg" double [not null, note: 'Cantidad de alimento consumido, en kilogramos (kg)']
+}
+
+Table "empleado_beneficios" {
+  "id" int [pk, not null]
+  "rfc_emp" varchar(13) [not null, note: 'Relación con el empleado']
+  "benef_id" int [not null, note: 'Relación con el beneficio']
+  "fecha_inicio" date [not null, note: 'Fecha de inicio del beneficio']
+  "fecha_fin" date [not null, note: 'Fecha de finalización del beneficio (opcional)']
+}
+
+Table "empleados" {
+  "rfc" varchar(13) [pk, not null, note: 'Relación con la tabla Personas']
+  "puesto_id" int [not null, note: 'Relación con el puesto del empleado']
+  "finca_id" int [not null, note: 'Relación con la finca donde trabaja']
+  "fecha_con" date [not null, note: 'Fecha en la que fue contratado']
+  "salario" double [not null, note: 'Salario mensual']
+  "estatus" int [not null, note: '1 = Activo, 2 = Inactivo, 3 = Vacaciones']
+  "observ" text [note: 'Comentarios adicionales']
+}
+
+Table "enfermedades" {
+  "id" int [pk, not null]
+  "tratam_id" int
+  "nombre" varchar(255) [not null, note: 'Nombre de la enfermedad']
+  "desc" text [not null, note: 'Descripción de síntomas y efectos']
+  "causa" varchar(255) [not null, note: 'Bacteria, virus, parásito, etc.']
+  "mod_transm" varchar(255) [not null, note: 'Contacto, alimento, aire, etc.']
+  "prev" text [not null, note: 'Medidas para evitar la enfermedad']
+  "rev" tinyint(1) [not null, note: 'TRUE = Reversible con tratamiento, FALSE = Permanente']
+}
+
+Table "estados" {
+  "id" int [pk, not null, increment]
+  "nombre" varchar(100) [not null]
+  "pais" int
+
+  Indexes {
+    pais [type: btree, name: "pais"]
+  }
+}
+
+Table "fincas" {
+  "id" int [pk, not null]
+  "nombre" varchar(100) [not null, note: 'Nombre de la finca']
+  "id_colonia" int [not null, note: 'Dirección o coordenadas']
+  "capacidad" int [not null, note: 'Número de ganados en la camada']
+  "rfc_prop" varchar(13) [note: 'Nombre del propietario de la finca']
+  "desc" text [note: 'Descripción adicional']
+}
+
+Table "ganado_vacunas" {
+  "id_comp" varchar(100) [pk, not null]
+  "fech" date [not null, note: 'Fecha de aplicación de la vacuna']
+  "no_arete" int [not null, note: 'Relación con la tabla Ganados']
+  "vacuna_id" int [not null, note: 'Relación con la tabla Vacunas']
+  "prox_dosis" date [not null, note: 'Fecha programada para la siguiente dosis']
+  "rfc" varchar(13) [not null, note: 'Nombre del veterinario o encargado']
+  "obs" text [note: 'Observaciones o notas adicionales']
+}
+
+Table "ganados" {
+  "no_arete" int [pk, not null, note: 'Número de arete']
+  "raza_id" int [not null, note: 'Relación con la raza del ganado']
+  "finca_id" int [not null, note: 'Relación con la finca donde está el ganado']
+  "camada_id" int [not null, note: 'Relación con la camada a la que pertenece']
+  "aspiracion" int [not null, note: '1 = Lechero, 2 = Engorda']
+  "sexo" varchar(1) [not null, note: 'M = Macho, H = Hembra']
+  "fech_nac" date [not null, note: 'Fecha de nacimiento']
+  "estado" int [not null, note: '1 = Sano, 2 = Vendido, 3 = Muerto']
+  "fech_muerte" datetime [not null, note: 'Fecha de muerte (si aplica)']
+  "externo" tinyint(1) [not null, note: 'FALSE = Interno, TRUE = Externo']
+}
+
+Table "horarios" {
+  "id" int [pk, not null]
+  "rfc_emp" varchar(13) [not null, note: 'Relación con el empleado']
+  "dia_semana" varchar(20) [not null, note: 'Día de la semana (Lunes, Martes, etc.)']
+  "hora_entrada" time [not null, note: 'Hora de entrada']
+  "hora_salida" time [not null, note: 'Hora de salida']
+}
+
+Table "logs_users" {
+  "rfc_fech" varchar(40) [pk, not null, note: 'rfc + fecha DD-MM-YY_HH-MM-SS']
+  "rfc" varchar(13) [unique, not null, note: 'RFC del usuario que accedio al sistema']
+  "conn" datetime [not null, note: 'Fecha y hora de conexión']
+  "duration" double [note: 'En minutos 00 y segundos 00']
+  "disconn" datetime [note: 'Fecha y hora de desconexión']
+}
+
+Table "muertes" {
+  "no_arete" int [pk, not null, note: 'Relación con el ganado fallecido']
+  "fech" date [not null, note: 'Fecha en la que ocurrió la muerte']
+  "causa" varchar(100) [not null, note: 'Causa de la muerte (enfermedad, fractura, etc.)']
+  "enferm_id" int [not null, note: 'Relación con la enfermedad (si aplica)']
+  "observ" text [note: 'Comentarios adicionales']
+}
+
+Table "municipios" {
+  "id" int [pk, not null, increment]
+  "nombre" varchar(100) [not null]
+  "estado" int
+
+  Indexes {
+    estado [type: btree, name: "estado"]
+  }
+}
+
+Table "pagos_empleados" {
+  "no_ref" int [pk, not null]
+  "rfc_emp" varchar(13) [not null, note: 'Relación con el empleado']
+  "fecha_pago" date [not null, note: 'Fecha del pago']
+  "monto" double [not null, note: 'Monto pagado']
+  "metodo_pago" varchar(50) [not null, note: 'Método de pago (efectivo, transferencia, etc.)']
+  "observ" text [note: 'Comentarios adicionales']
+}
+
+Table "paises" {
+  "id" int [pk, not null, increment]
+  "nombre" varchar(100) [not null]
+}
+
+Table "personas" {
+  "rfc" varchar(13) [pk, not null]
+  "nombre" varchar(100) [not null]
+  "app" varchar(100) [not null]
+  "apm" varchar(100) [not null]
+  "fech_nac" date [not null]
+  "sex" varchar(1) [not null]
+  "id_colonia" int [not null]
+}
+
+Table "proveedores" {
+  "rfc" varchar(13) [pk, not null, note: 'Relación con la tabla Personas']
+  "correo" varchar(100) [not null]
+  "tipo" varchar(50) [not null, note: 'Ganado, Alimentos, Medicinas, ...']
+  "nom_emp" varchar(100) [not null, note: 'Nombre de la empresa']
+  "telefono" int [not null]
+}
+
+Table "puestos" {
+  "id" int [pk, not null]
+  "nombre" varchar(100) [not null, note: 'Nombre del puesto (Ejemplo: Veterinario, Cuidador, Administrador)']
+  "descripcion" text [not null, note: 'Descripción del puesto']
+  "salario_base" double [not null, note: 'Salario base para el puesto']
+}
+
+Table "razas" {
+  "id" int [pk, not null, note: 'Identificador único de la raza']
+  "nombre" varchar(255) [not null, note: 'Nombre de la raza']
+  "imagen" blob [not null, note: 'Imagen representativa de la raza']
+}
+
+Table "salud_normal" {
+  "id" int [pk, not null, note: 'Identificador único del registro de salud']
+  "cond_corp" int [not null, note: 'Condición corporal, en una escala del 1 al 9']
+  "frec_card" int [not null, note: 'Frecuencia cardíaca (latidos por minuto)']
+  "temp_corp" float [not null, note: 'Temperatura corporal (en grados Celsius)']
+}
+
+Table "sintomas_efectos" {
+  "id" int [pk, not null]
+  "id_enferm" int [not null, note: 'Relación con la enfermedad']
+  "sintoma" varchar(100) [not null, note: 'Nombre del síntoma (Ejemplo: Fiebre, Pérdida de apetito)']
+  "efecto" varchar(100) [not null, note: 'Nombre del efecto (Ejemplo: Pérdida de peso, Infertilidad)']
+  "descripcion" text [not null, note: 'Explicación detallada del síntoma']
+  "gravedad" int [not null, note: '1 = Leve, 2 = Moderado, 3 = Grave']
+}
+
+Table "tratamientos" {
+  "id" int [pk, not null]
+  "nombre" varchar(255) [not null, note: 'Nombre del tratamiento']
+  "instrucciones" text [note: 'Cómo aplicar el tratamiento']
+  "duracion" int [not null, note: 'Duración en días']
+  "dosis" varchar(255) [not null, note: 'Dosis recomendada']
+  "observaciones" text [note: 'Información adicional']
+}
+
+Table "usuarios" {
+  "rfc" varchar(13) [pk, not null]
+  "correo" varchar(50) [unique, not null]
+  "pass" varchar(50) [not null]
+  "rol" int [default: 4, note: '0 = DUEÑO, 1 = ADMINISTRADOR, 2 = CONTABILIDAD, 3 = SECRETARIA, 4 = CAPATAZ']
+  "fech_alta" datetime [not null]
+  "last_session" datetime [note: 'Último inicio de sesión']
+}
+
+Table "vacuna_efectos" {
+  "id" int [pk, not null, note: 'Identificador único del efecto adverso']
+  "vacuna_id" int [not null, note: 'Relación con la tabla Vacunas']
+  "nomb" int [not null, note: 'Relación con la tabla Efectos_Adversos']
+  "prob" int [not null, note: 'Probabilidad de que ocurra el efecto adverso (%)']
+  "dura" int [note: 'Tiempo estimado de duración del efecto adverso (en días)']
+  "desc" text [note: 'Descripción detallada del efecto adverso']
+}
+
+Table "vacunas_desparacitaciones" {
+  "id" int [pk, not null, note: 'Identificador único de la vacuna o desparasitación']
+  "nombre" varchar(255) [not null, note: 'Nombre de la vacuna o desparasitación']
+  "enferm_id" int [not null, note: 'Relación con la tabla Enfermedades, indica la enfermedad que previene']
+  "fabr" varchar(255) [not null, note: 'Nombre del laboratorio que produce la vacuna o desparasitación']
+  "duracion" int [not null, note: 'Duración de la inmunidad en meses']
+  "dosis" double [not null, note: 'Dosis recomendada (Ejemplo: 5 ml por cada 100 kg)']
+  "via_adm" int [not null, note: 'Vía de administración: 0=Intramuscular, 1=Subcutánea, 2=Oral']
+  "edad_recom" int [not null, note: 'Edad mínima del ganado para aplicarla (en meses)']
+  "desc" text [note: 'Descripción adicional de la vacuna o desparasitación']
+}
+
+Table "ventas" {
+  "no_venta" varchar(50) [pk, not null, note: 'Clave combinada formada por [rfc_comprador]+[no_arete]']
+  "no_arete" int [not null, note: 'Relación con la tabla Ganados, indica el ganado vendido']
+  "rfc_comprador" varchar(13) [not null, note: 'RFC del comprador']
+  "rfc_vendedor" varchar(13) [not null, note: 'RFC del vendedor']
+  "fech_venta" date [not null, note: 'Fecha en la que se realizó la venta']
+  "prec_venta" double [not null, note: 'Precio al que se vendió el ganado']
+  "peso_venta" double [not null, note: 'Peso del ganado al momento de la venta']
+  "met_pago" int [not null, note: 'Método de pago: 0 = Efectivo, 1 = Transferencia, 2 = Tarjeta']
+  "fact" blob [note: 'Factura de la venta, almacenada como un objeto binario (blob)']
+  "observ" text [note: 'Comentarios adicionales sobre la venta']
+}
+
+Ref "action_users_ibfk_1":"logs_users"."rfc_fech" < "actions_users"."log_id"
+
+Ref "users_ibfk_3":"usuarios"."rfc" < "actions_users"."rfc"
+
+Ref "fk_actividades_4897":"personas"."rfc" < "actividades"."rfc_asign"
+
+Ref "fk_actividades_904897":"personas"."rfc" < "actividades"."rfc_emp"
+
+Ref "asist_ibfk_1":"empleados"."rfc" < "asistencias"."rfc_emp"
+
+Ref "finca_ibfk_1":"fincas"."id" < "camadas"."finca_id"
+
+Ref "proveedor_ibfk_1":"proveedores"."rfc" < "camadas"."rfc_prov"
+
+Ref "fk_salud_954897":"ganados"."no_arete" < "chequeos"."no_arete"
+
+Ref "colonias_ibfk_1":"municipios"."id" < "colonias"."municipio"
+
+Ref "compras_ganados":"proveedores"."rfc" < "compras_ganados"."rfc_prov"
+
+Ref "compras_ganados_32":"ganados"."no_arete" < "compras_ganados"."no_arete"
+
+Ref "compras_fk":"alimentos"."id" < "compras_insumos"."insumo_id"
+
+Ref "compras_fk_1":"proveedores"."rfc" < "compras_insumos"."rfc_prov"
+
+Ref "fk_consumo_8523":"razas"."id" < "consumo"."raza_id"
+
+Ref "fk_consumo_2523":"alimentos"."id" < "consumo"."alimento_id"
+
+Ref "emp_ben_fk1":"beneficios"."id" < "empleado_beneficios"."benef_id"
+
+Ref "emp_ben_fk2":"empleados"."rfc" < "empleado_beneficios"."rfc_emp"
+
+Ref "empleado_ibfk_1":"puestos"."id" < "empleados"."puesto_id"
+
+Ref "empleado_ibfk_2":"fincas"."id" < "empleados"."finca_id"
+
+Ref "empleado_ibfk_3":"personas"."rfc" < "empleados"."rfc"
+
+Ref "fk_enfermedad_904897":"tratamientos"."id" < "enfermedades"."tratam_id"
+
+Ref "estados_ibfk_1":"paises"."id" < "estados"."pais"
+
+Ref "colonias_ibfk_2":"colonias"."id" < "fincas"."id_colonia"
+
+Ref "prov_fk_1":"personas"."rfc" < "fincas"."rfc_prop"
+
+Ref "ganado_vacunas_fk1":"ganados"."no_arete" < "ganado_vacunas"."no_arete"
+
+Ref "ganado_vacunas_fk2":"vacunas_desparacitaciones"."id" < "ganado_vacunas"."vacuna_id"
+
+Ref "ganado_vacunas_fk3":"personas"."rfc" < "ganado_vacunas"."rfc"
+
+Ref "camada_ibfk_1":"camadas"."id" < "ganados"."camada_id"
+
+Ref "finca_ibfk_2":"fincas"."id" < "ganados"."finca_id"
+
+Ref "fk_raza_904897":"razas"."id" < "ganados"."raza_id"
+
+Ref "horarios_ibfk_1":"empleados"."rfc" < "horarios"."rfc_emp"
+
+Ref "users_ibfk_2":"usuarios"."rfc" < "logs_users"."rfc"
+
+Ref "municipios_ibfk_1":"estados"."id" < "municipios"."estado"
+
+Ref "pagos_emp_fk1":"empleados"."rfc" < "pagos_empleados"."rfc_emp"
+
+Ref "personas_ibfk_1":"colonias"."id" < "personas"."id_colonia"
+
+Ref "proveedor_ibfk_2":"personas"."rfc" < "proveedores"."rfc"
+
+Ref "fk_salud_904897":"razas"."id" < "salud_normal"."id"
+
+Ref "sintomas_fk_1":"enfermedades"."id" < "sintomas_efectos"."id_enferm"
+
+Ref "clientes_ibfk_1":"personas"."rfc" < "usuarios"."rfc"
+
+Ref "vacunas_efectos_fk_1":"vacunas_desparacitaciones"."id" < "vacuna_efectos"."vacuna_id"
+
+Ref "vacunas_fk_1":"enfermedades"."id" < "vacunas_desparacitaciones"."enferm_id"
+
+Ref "fk_ganado_904897":"personas"."rfc" < "ventas"."rfc_comprador"
+
+Ref "fk_ganado_4897":"ganados"."no_arete" < "ventas"."no_arete"
+
+Ref "fk_ganado_9048":"personas"."rfc" < "ventas"."rfc_vendedor"

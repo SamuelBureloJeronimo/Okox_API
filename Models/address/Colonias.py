@@ -30,3 +30,13 @@ class Colonias(Base):
 
     def __str__(self):
         return f"{self.nombre}, {self.ciudad}"
+    
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "nombre": self.nombre,
+            "ciudad": self.ciudad,
+            "municipio": self.municipio,
+            "asentamiento": self.asentamiento,
+            "codigo_postal": self.codigo_postal
+        }

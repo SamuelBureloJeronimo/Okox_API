@@ -2,7 +2,6 @@ Table "clientes" {
   "rfc" varchar(13) [pk, not null]
   "id_umbral" int [not null]
   "id_company" int [not null]
-  "estado_servicio" int [not null]
   "fecha_contratacion" datetime [not null]
 
   Indexes {
@@ -35,9 +34,25 @@ Table "company" {
   "link_x" varchar(150)
 }
 
+Table "contratos" {
+  "id" int [pk, not null, increment]
+  "rfc_cli" varchar(13) [not null]
+  "fech_alta" date [not null]
+  "fech_vige" date [not null]
+  "tipo_fact" varchar(30) [not null]
+  "tipo_serv" varchar(30) [not null]
+  "id_colonia" int [not null]
+
+  Indexes {
+    id_colonia [type: btree, name: "id_colonia"]
+    rfc_cli [type: btree, name: "rfc_cli"]
+  }
+}
+
 Table "dispositivos" {
   "Wifi_MacAddress" varchar(17) [pk, not null]
   "rfc" varchar(13) [not null]
+  "valvula" tinyint(1)
   "last_connection" datetime
 
   Indexes {
@@ -122,6 +137,7 @@ Table "personas" {
   "fech_nac" date [not null]
   "sex" varchar(1) [not null]
   "id_colonia" int [not null]
+  "tel" varchar(25) [not null, default: '']
 
   Indexes {
     id_colonia [type: btree, name: "id_colonia"]
@@ -145,9 +161,9 @@ Table "reportes_fugas" {
 Table "sensores_log" {
   "fecha" datetime [pk, not null]
   "Wifi_MacAddress" varchar(17) [not null]
-  "presion" float [not null]
-  "caudal" float [not null]
-  "litros_consumidos" float [not null]
+  "presion" double [not null, default: 0]
+  "caudal" double [not null, default: 0]
+  "litros_consumidos" double [not null, default: 0]
 
   Indexes {
     Wifi_MacAddress [type: btree, name: "Wifi_MacAddress"]
@@ -178,9 +194,11 @@ Table "usuarios" {
   "email" varchar(50) [unique, not null]
   "username" varchar(50) [unique, not null]
   "password" varchar(255)
-  "token" varchar(255)
+  "token" text
   "rol" int [note: '# 0 == Cliente, 1 == Capturista, 2 == Técnico, 3 == Administrador, 4 = Compañia']
   "last_session" datetime
+  "imagen" varchar(255)
+  "id_company" int
 }
 
 Ref "clientes_ibfk_1":"personas"."rfc" < "clientes"."rfc"
@@ -192,6 +210,10 @@ Ref "clientes_ibfk_3":"company"."id" < "clientes"."id_company"
 Ref "colonias_ibfk_1":"municipios"."id" < "colonias"."municipio"
 
 Ref "company_ibfk_1":"personas"."rfc" < "company"."rfc"
+
+Ref "contratos_ibfk_1":"clientes"."rfc" < "contratos"."rfc_cli"
+
+Ref "contratos_ibfk_2":"colonias"."id" < "contratos"."id_colonia"
 
 Ref "dispositivos_ibfk_1":"clientes"."rfc" < "dispositivos"."rfc"
 
@@ -218,3 +240,5 @@ Ref "suspensiones_ibfk_1":"clientes"."rfc" < "suspensiones"."rfc"
 Ref "suspensiones_ibfk_2":"motivo_suspensiones"."id" < "suspensiones"."motivo_id"
 
 Ref "usuarios_ibfk_1":"personas"."rfc" < "usuarios"."rfc"
+
+Ref "usuarios_ibfk_2":"company"."id" < "usuarios"."id_company"
