@@ -92,7 +92,7 @@ def create_owner():
     
 @BP_System.route("/get-by-id/<id_company>", methods=["GET"])
 def get_company(id_company):
-    company = session.query(Company).get(id_company)
+    company = session.query(Companies).get(id_company)
 
     if(company is None):
         return jsonify({
@@ -103,7 +103,7 @@ def get_company(id_company):
 
 @BP_System.route("/get-all", methods=["GET"])
 def get_all_companies():
-    companies = session.query(Company).all()
+    companies = session.query(Companies).all()
 
     if(companies is None):
         return jsonify({
@@ -113,50 +113,3 @@ def get_all_companies():
     companies_list = [company.to_dict() for company in companies]
 
     return jsonify(companies_list), 200
-
-@BP_System.route('/update-logo', methods=['PUT'])
-def update_logo():
-    # Validar si la imagen está presente
-    if 'logo' not in request.files:
-        return jsonify({"error": "El campo 'logo' es obligatorio"}), 400
-
-    # Procesar la imagen
-    if 'logo' in request.files:
-        file = request.files['logo']
-        filename = secure_filename(file.filename)
-        ext = os.path.splitext(filename)[1]  # Obtener la extensión
-
-        nuevo_nombre = f"{uuid.uuid4()}{ext}"  # Generar un nuevo nombre único
-        filepath = os.path.join(os.getenv("UPLOAD_FOLDER")+"image/", nuevo_nombre)
-        
-        file.save(filepath)  # Guardar el archivo
-    else:
-        filepath = None
-
-    company = Company(
-        rfc=request.form.get("rfc"),
-        logo=nuevo_nombre,
-        nombre=request.form.get("nombre_empresa"),
-        descripcion=request.form.get("descripcion"),
-        facebook=request.form.get("facebook"),
-        linkedIn=request.form.get("linkedIn"),
-        link_x=request.form.get("link_x")
-    )
-    
-    try:
-        session.query(Company).filter(Company.id == 1).update(company)
-        session.add_all([persona, company])
-        session.commit()
-        return jsonify({"mensaje": "¡Nuevo cliente registrado con éxito!"}), 200
-    except exc.IntegrityError as e:
-        session.rollback()
-        return jsonify({
-            "error": "Llave duplicada. Esta persona ya existe."
-        }), 400 
-
-    except exc.SQLAlchemyError as e:
-        session.rollback()
-        return jsonify({
-            "error": "Error en la base de datos"
-        }), 500
-  

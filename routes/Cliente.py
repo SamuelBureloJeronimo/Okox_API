@@ -1,14 +1,9 @@
-from random import randint
-import uuid
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import get_jwt, jwt_required
 from database.db import *
 from sqlalchemy import exc
-from werkzeug.utils import secure_filename
 
-import os
-
-from models.Companies import Company
+from models.Companies import Companies
 from models.Personas import Personas
 from models.Usuarios import Usuarios
 
@@ -25,7 +20,7 @@ def init_dash_cli():
 
     
     user = session.query(Usuarios).filter_by(email=email).first();
-    company = session.query(Company).filter_by(id=id_company).first();
+    company = session.query(Companies).filter_by(rfc_user=id_company).first();
 
 
     if user is None or company is None:
