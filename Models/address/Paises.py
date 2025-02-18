@@ -1,24 +1,18 @@
-from database.db import Base
 from sqlalchemy import Column, Integer, String
-
+from database.db import Base
+from sqlalchemy.orm import relationship
 
 class Paises(Base):
-    __tablename__ = "paises"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    __tablename__ = 'paises'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     nombre = Column(String(100), nullable=False)
 
-    def __init__(self, nombre):
-        self.nombre = nombre
+    # ForaignKey que apuntan a esta clase <-
+    fk_estados = relationship("Estados", back_populates="paises")
 
-    def __repr__(self):
-        return f"Pais(id={self.id}, nombre={self.nombre})"
-
-    def __str__(self):
-        return self.nombre
-    
     def to_dict(self):
         return {
-            "id": self.id,
-            "nombre": self.nombre
+            'id': self.id,
+            'nombre': self.nombre,
         }

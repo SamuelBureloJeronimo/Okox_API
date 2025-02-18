@@ -1,42 +1,33 @@
-from database.db import Base
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
-
+from database.db import Base
 
 class Colonias(Base):
-    __tablename__ = "colonias"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    __tablename__ = 'colonias'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     nombre = Column(String(100), nullable=False)
     ciudad = Column(String(100), nullable=False)
-    municipio = Column(Integer, ForeignKey('municipios.id'), nullable=True)  # Relación a una tabla de "Municipio"
-    asentamiento = Column(String(100), nullable=True)
-    codigo_postal = Column(Integer, nullable=True)
-
-    # Relación: cada estado está relacionado con un Pais (con un Pais específico)
-    Municipios = relationship("Municipios", backref="colonias")
-    reportes_fugas = relationship("Reportes_Fugas", back_populates="Colonias")
-
-    def __init__(self, nombre, ciudad, municipio=None, asentamiento=None, codigo_postal=None):
-        self.nombre = nombre
-        self.ciudad = ciudad
-        self.municipio = municipio
-        self.asentamiento = asentamiento
-        self.codigo_postal = codigo_postal
-
-    def __repr__(self):
-        return f"Colonia(id={self.id}, nombre={self.nombre}, ciudad={self.ciudad}, " \
-               f"municipio={self.municipio}, asentamiento={self.asentamiento}, codigo_postal={self.codigo_postal})"
-
-    def __str__(self):
-        return f"{self.nombre}, {self.ciudad}"
+    municipio = Column(Integer, ForeignKey('municipios.id'))
+    asentamiento = Column(String(100))
+    codigo_postal = Column(Integer)
     
+    # ForaignKey propias de la clase
+    municipios = relationship("Municipios", back_populates="fk_colonias")
+    # ForaignKey que apuntan a esta clase <-
+    fk_personas = relationship("Personas", back_populates="colonias")
+    fk_companies = relationship("Companies", back_populates="colonias")
+    fk_contratos = relationship("Contratos", back_populates="colonias")
+    fk_colonia_rf = relationship("Reportes_Fugas", back_populates="colonias")
+    fk_colonias_afectadas = relationship("Colonias_Afectadas", back_populates="colonias")
+
+
     def to_dict(self):
         return {
-            "id": self.id,
-            "nombre": self.nombre,
-            "ciudad": self.ciudad,
-            "municipio": self.municipio,
-            "asentamiento": self.asentamiento,
-            "codigo_postal": self.codigo_postal
+            'id': self.id,
+            'nombre': self.nombre,
+            'ciudad': self.ciudad,
+            'municipio': self.municipio,
+            'asentamiento': self.asentamiento,
+            'codigo_postal': self.codigo_postal,
         }

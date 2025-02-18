@@ -1,38 +1,30 @@
+from sqlalchemy import Column, Integer, String, Date, ForeignKey
 from database.db import Base
-from sqlalchemy import Column, ForeignKey, Integer, String, Date
-from sqlalchemy.orm import relationship
-
+from sqlalchemy.orm import relationship, backref
 
 class Personas(Base):
-    __tablename__ = "personas"
-
-    rfc = Column(String(13), primary_key=True)
+    __tablename__ = 'personas'
+    
+    rfc = Column(String(13), primary_key=True, nullable=False)
     nombre = Column(String(100), nullable=False)
-    app = Column(String(100), nullable=False)  # Apellido paterno
-    apm = Column(String(100), nullable=False)  # Apellido materno
-    fech_nac = Column(Date, nullable=False)  # Fecha de nacimiento
-    tel = Column(String(25))  # Número de telefono
-    sex = Column(String(1), nullable=False)  # Género ('M' o 'F')
-    id_colonia = Column(Integer, ForeignKey('colonias.id'), nullable=False)  # Relación a una colonia (posiblemente otra tabla)
-
-    # Relación: cada estado está relacionado con un Pais (con un Pais específico)
-    Colonias = relationship("Colonias", backref="personas")
-
-    def __init__(self, rfc, nombre, app, apm=None, fech_nac=None, tel="", sex="", id_colonia=None):
-        self.rfc = rfc
-        self.nombre = nombre
-        self.app = app
-        self.tel = tel
-        self.apm = apm
-        self.fech_nac = fech_nac
-        self.sex = sex
-        self.id_colonia = id_colonia
-
-    def __repr__(self):
-        return (
-            f"Persona(rfc={self.rfc}, nombre={self.nombre}, app={self.app}, "
-            f"apm={self.apm}, fech_nac={self.fech_nac}, sex={self.sex})"
-        )
-
-    def __str__(self):
-        return f"{self.nombre} {self.app} {self.apm or ''}".strip()
+    app = Column(String(100), nullable=False)
+    apm = Column(String(100), nullable=False)
+    fech_nac = Column(Date, nullable=False)
+    sex = Column(String(1), nullable=False)
+    tel = Column(String(25), nullable=False, default='')
+    id_colonia = Column(Integer, ForeignKey('colonias.id'), nullable=False)
+    
+    # Relaciones
+    colonias = relationship("Colonias", back_populates="fk_personas")
+    
+    def to_dict(self):
+        return {
+            'rfc': self.rfc,
+            'nombre': self.nombre,
+            'app': self.app,
+            'apm': self.apm,
+            'fech_nac': self.fech_nac.strftime('%Y-%m-%d') if self.fech_nac else None,
+            'sex': self.sex,
+            'id_colonia': self.id_colonia,
+            'tel': self.tel
+        }

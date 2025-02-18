@@ -1,29 +1,29 @@
-from database.db import Base
-from sqlalchemy import Column, Integer, Float, Date, String, ForeignKey, LargeBinary, DateTime
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.mysql import MEDIUMBLOB
+from database.db import Base
+from datetime import datetime
 
 class Pagos(Base):
-    __tablename__ = "pagos"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    rfc = Column(String(13), ForeignKey("clientes.rfc"), nullable=False)
-    comprobante = Column(LargeBinary(length=16777215), nullable=False)
-    monto = Column(Float, nullable=False, default=0.0)  # Monto del pago
-    fecha_pago = Column(DateTime, nullable=False)  # Fecha del pago
-    fecha_subida = Column(DateTime, nullable=False)  # Fecha de subida
-
-    Clientes = relationship("Clientes", backref="pagos")
-
-    def __init__(self, rfc, comprobante, monto, fecha_pago, fecha_subida):
-        self.rfc = rfc
-        self.comprobante = comprobante
-        self.monto = monto
-        self.fecha_pago = fecha_pago
-        self.fecha_subida = fecha_subida
-
-
-    def __repr__(self):
-        return f"Pago(id={self.id}, rfc={self.rfc}, fecha={self.fecha_pago}, monto={self.monto})"
-
-    def __str__(self):
-        return f"Pago de {self.monto} realizado por el cliente {self.rfc} el {self.fecha_pago}"
+    __tablename__ = 'pagos'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    rfc_cli = Column(String(13), ForeignKey('usuarios.rfc'), nullable=False)
+    comprobante = Column(String(255), nullable=False)
+    monto = Column(Float, nullable=False)
+    fecha_pago = Column(DateTime, nullable=False, default=datetime.utcnow)
+    fecha_subida = Column(DateTime, nullable=False, default=datetime.utcnow)
+    
+    # Relaciones
+    cliente = relationship("Usuarios", back_populates="pagos")
+    
+    def to_dict(self):
+        """Método para serializar el modelo a diccionario."""
+        return {
+            'id': self.id,
+            'rfc_cli': self.rfc_cli,
+            'comprobante': self.comprobante,
+            'monto': self.monto,
+            'fecha_pago': self.fecha_pago.isoformat(),
+            'fecha_subida': self.fecha_subida.isoformat(),
+        }

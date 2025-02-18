@@ -1,27 +1,24 @@
-from database.db import Base
-from sqlalchemy import Column, Double, DateTime, String, ForeignKey, func
+from sqlalchemy import Column, String, Double, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
+from database.db import Base
 
 class Sensores_Log(Base):
-    __tablename__ = "sensores_log"
-
-    fecha = Column(DateTime, primary_key=True, nullable=False, default=func.now())  # Fecha y hora asociada a la presión
+    __tablename__ = 'sensores_log'
+    
+    fecha = Column(DateTime, primary_key=True, nullable=False)
     Wifi_MacAddress = Column(String(17), ForeignKey('dispositivos.Wifi_MacAddress'), nullable=False)
-    presion = Column(Double, nullable=False)
-    caudal = Column(Double, nullable=False)
-    litros_consumidos = Column(Double, nullable=False)
-
-    Dispositivos = relationship("Dispositivos", backref="sensores_log")
-
-    def __init__(self, Wifi_MacAddress, presion, caudal, litros_consumidos, fecha=None):
-        self.Wifi_MacAddress = Wifi_MacAddress
-        self.presion = presion
-        self.caudal = caudal
-        self.litros_consumidos = litros_consumidos
-        self.fecha = fecha
-
-    def __repr__(self):
-        return f"Presion(id={self.id}, presion={self.presion}, cliente={self.id_cliente}, fecha={self.fecha})"
-
-    def __str__(self):
-        return f"Presión de {self.presion} registrada para el cliente {self.id_cliente}"
+    presion = Column(Double, nullable=False, default=0)
+    caudal = Column(Double, nullable=False, default=0)
+    litros_consumidos = Column(Double, nullable=False, default=0)
+    
+    # Relaciones
+    dispositivo = relationship("Dispositivos", back_populates="sensores_log")
+    
+    def to_dict(self):
+        return {
+            'fecha': self.fecha.isoformat(),
+            'Wifi_MacAddress': self.Wifi_MacAddress,
+            'presion': self.presion,
+            'caudal': self.caudal,
+            'litros_consumidos': self.litros_consumidos,
+        }

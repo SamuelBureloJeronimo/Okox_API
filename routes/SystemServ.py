@@ -7,18 +7,18 @@ from werkzeug.utils import secure_filename
 
 import os
 
-from models.Company import Company
+from models.Companies import Companies
 from models.Personas import Personas
 from models.Usuarios import Usuarios
 
 # Cargar variables desde el archivo .env
 load_dotenv()
 
-BP_Company = Blueprint('BP_Company', __name__, url_prefix='/company')
+BP_System = Blueprint('BP_System', __name__, url_prefix='/api/v1/')
 
-@BP_Company.route('/create', methods=['POST'])
+@BP_System.route('/create', methods=['POST'])
 def create_owner():
-    required_fields = ["rfc", "nombre", "app", "apm", "fech_nac", "sex", "id_colonia", "nombre_empresa", "descripcion"]
+    required_fields = ["rfc", "nombre", "app", "apm", "fech_nac", "sex", "tel", "tel_empr","id_colonia", "nombre_empr", "descripcion", "col_empr"]
     missing_fields = [field for field in required_fields if not request.form.get(field)]
 
     # Validar si falta algún campo
@@ -28,16 +28,7 @@ def create_owner():
     # Validar si la imagen está presente
     if 'logo' not in request.files:
         return jsonify({"error": "El campo 'logo' es obligatorio"}), 400
-
-    persona = Personas(
-        rfc=request.form.get("rfc"),
-        nombre=request.form.get("nombre"),
-        app=request.form.get("app"),
-        apm=request.form.get("apm"),
-        fech_nac=request.form.get("fech_nac"),
-        sex=request.form.get("sex"),
-        id_colonia=request.form.get("id_colonia")
-    )
+    
     # Procesar la imagen
     if 'logo' in request.files:
         file = request.files['logo']
@@ -51,23 +42,34 @@ def create_owner():
     else:
         filepath = None
 
-    company = Company(
-        rfc=request.form.get("rfc"),
-        logo=nuevo_nombre,
-        nombre=request.form.get("nombre_empresa"),
-        descripcion=request.form.get("descripcion"),
-        facebook=request.form.get("facebook"),
-        linkedIn=request.form.get("linkedIn"),
-        link_x=request.form.get("link_x")
-    )
+    persona = Personas()
+    persona.rfc=request.form.get("rfc"),
+    persona.nombre=request.form.get("nombre"),
+    persona.app=request.form.get("app"),
+    persona.apm=request.form.get("apm"),
+    persona.fech_nac=request.form.get("fech_nac"),
+    persona.sex=request.form.get("sex"),
+    persona.tel=request.form.get("tel"),
+    persona.id_colonia=request.form.get("id_colonia")
 
-    user = Usuarios(
-        rfc=request.form.get("rfc"),
-        username=request.form.get("username"),
-        password=request.form.get("password"),
-        email=request.form.get("email"),
-        rol=4
-    )
+    company = Companies()
+    company.rfc_user=request.form.get("rfc"),
+    company.logo=nuevo_nombre,
+    company.nombre=request.form.get("nombre_empr"),
+    company.descripcion=request.form.get("descripcion"),
+    company.telefono=request.form.get("tel_empr"),
+    company.facebook=request.form.get("facebook"),
+    company.linkedIn=request.form.get("linkedIn"),
+    company.link_x=request.form.get("link_x")
+    company.id_colonia=request.form.get("col_empr")
+
+    user = Usuarios()
+    user.rfc=request.form.get("rfc"),
+    user.username=request.form.get("username"),
+    user.password=request.form.get("password"),
+    user.email=request.form.get("email"),
+    user.rol=4
+    user.id_company=company.rfc_user
     
     try:
         session.add(persona)
@@ -88,7 +90,7 @@ def create_owner():
             "error": "Error en la base de datos"
         }), 500
     
-@BP_Company.route("/get-by-id/<id_company>", methods=["GET"])
+@BP_System.route("/get-by-id/<id_company>", methods=["GET"])
 def get_company(id_company):
     company = session.query(Company).get(id_company)
 
@@ -99,7 +101,7 @@ def get_company(id_company):
     
     return jsonify(company.to_dict()), 200
 
-@BP_Company.route("/get-all", methods=["GET"])
+@BP_System.route("/get-all", methods=["GET"])
 def get_all_companies():
     companies = session.query(Company).all()
 
@@ -112,8 +114,7 @@ def get_all_companies():
 
     return jsonify(companies_list), 200
 
-
-@BP_Company.route('/update-logo', methods=['PUT'])
+@BP_System.route('/update-logo', methods=['PUT'])
 def update_logo():
     # Validar si la imagen está presente
     if 'logo' not in request.files:

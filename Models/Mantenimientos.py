@@ -1,27 +1,30 @@
-from database.db import Base
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-
+from database.db import Base
 
 class Mantenimientos(Base):
-    __tablename__ = "mantenimientos"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    titulo = Column(String(80), nullable=False)  # Descripción del mantenimiento
-    descripcion = Column(String(200), nullable=False)  # Descripción del motivo del aviso
-    fecha = Column(DateTime, nullable=False)  # Fecha y hora del mantenimiento
-    colonia_afectada = Column(Integer, ForeignKey('colonias.id'), nullable=False)  # Relación a una colonia (posiblemente otra tabla)
-
-    Colonias = relationship("Colonias", backref="mantenimientos")
-
-    def __init__(self, titulo, descripcion, fecha=None):
-        self.titulo = titulo
-        self.descripcion = descripcion
-        self.fecha = fecha
-
-    def __repr__(self):
-        return f"Mantenimiento(id={self.id}, titulo={self.titulo}, " \
-               f"fecha={self.fecha})"
-
-    def __str__(self):
-        return f"Mantenimiento programado el {self.fecha}"
+    __tablename__ = 'mantenimientos'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    rfc_tec = Column(String(13), ForeignKey('usuarios.rfc'))
+    rfc_company = Column(String(13), ForeignKey('companies.rfc_user'))
+    titulo = Column(String(80), nullable=False)
+    descripcion = Column(String(200), nullable=False)
+    fecha = Column(DateTime, nullable=False)
+    
+    # ForaignKey propias de la clase
+    tecnico = relationship("Usuarios", foreign_keys="[Mantenimientos.rfc_tec]", back_populates="mantenimientos_tecnico")
+    companies = relationship("Companies", back_populates="mantenimientos")
+    # ForaignKey que apuntan a otra clase <-
+    fk_mantenimientos = relationship("Colonias_Afectadas", back_populates="mantenimientos")
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'rfc_tec': self.rfc_tec,
+            'rfc_company': self.rfc_company,
+            'titulo': self.titulo,
+            'descripcion': self.descripcion,
+            'fecha': self.fecha.isoformat(),
+            'colonia_afectada': self.colonia_afectada,
+        }

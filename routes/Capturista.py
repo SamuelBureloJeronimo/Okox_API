@@ -4,11 +4,9 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt, get_jwt_identity, jwt_required
 from database.db import *
 from sqlalchemy import exc
-from models.Clientes import Clientes
-from models.Company import Company
+from models.Companies import Companies
 from models.Personas import Personas
 from models.Usuarios import Usuarios
-from models.Umbral_Clientes import Umbral_Clientes
 
 
 BP_Capturista = Blueprint('BP_Capturista', __name__, url_prefix='/capturista')

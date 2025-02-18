@@ -8,8 +8,7 @@ from werkzeug.utils import secure_filename
 
 import os
 
-from models.Clientes import Clientes
-from models.Company import Company
+from models.Companies import Company
 from models.Personas import Personas
 from models.Usuarios import Usuarios
 

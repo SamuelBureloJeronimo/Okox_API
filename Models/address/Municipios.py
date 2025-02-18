@@ -1,31 +1,22 @@
-from database.db import Base
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
-
+from database.db import Base
 
 class Municipios(Base):
-    __tablename__ = "municipios"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    __tablename__ = 'municipios'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     nombre = Column(String(100), nullable=False)
-    estado = Column(Integer, ForeignKey('estados.id'), nullable=True)  # Relación a una tabla de "Estados" si es necesario
-
-    # Relación: cada estado está relacionado con un Pais (con un Pais específico)
-    Estados = relationship("Estados", backref="municipios")
-
-    def __init__(self, nombre, estado=None):
-        self.nombre = nombre
-        self.estado = estado
-
-    def __repr__(self):
-        return f"Municipio(id={self.id}, nombre={self.nombre}, estado={self.estado})"
-
-    def __str__(self):
-        return self.nombre
+    estado = Column(Integer, ForeignKey('estados.id'))
+    
+    # ForaignKey propias de la clase
+    estados = relationship("Estados", back_populates="fk_municipios")
+    # ForaignKey que apuntan a esta clase <-
+    fk_colonias = relationship("Colonias", back_populates="municipios")
     
     def to_dict(self):
         return {
-            "id": self.id,
-            "nombre": self.nombre,
-            "estado": self.estado
+            'id': self.id,
+            'nombre': self.nombre,
+            'estado': self.estado,
         }

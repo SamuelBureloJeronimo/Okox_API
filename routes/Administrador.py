@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify
 from flask_jwt_extended import get_jwt, get_jwt_identity, jwt_required
 from database.db import *
-from models.Company import Company
+from models.Companies import Companies
 from models.Usuarios import Usuarios
 
 
@@ -16,7 +16,7 @@ def init_dash():
     id_company = jwt_data.get("id_company")  # Si guardaste "nombre" en el token
     
     user = session.query(Usuarios).filter_by(email=email).first();
-    company = session.query(Company).filter_by(id=id_company).first();
+    company = session.query(Companies).filter_by(id=id_company).first();
 
     if user is None or company is None:
         return jsonify({"email": email, "id": id_company}), 400
