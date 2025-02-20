@@ -14,7 +14,7 @@ BP_Capturista = Blueprint('BP_Capturista', __name__, url_prefix='/capturista')
 @BP_Capturista.route('/create-cliente', methods=['POST'])
 @jwt_required()
 def create_client():
-    required_fields = ["rfc", "nombre", "app", "apm", "fech_nac", "sex", "id_colonia", "id_umbral", "tel"]
+    required_fields = ["rfc", "nombre", "app", "apm", "fech_nac", "sex", "id_colonia", "tel"]
     missing_fields = [field for field in required_fields if not request.form.get(field)]
 
     # Validar si falta algún campo
@@ -24,36 +24,28 @@ def create_client():
     jwt_data = get_jwt()  # Obtiene todo el payload del JWT
     id_company = jwt_data.get("id_company")  # Si guardaste "nombre" en el token
     
-    persona = Personas(
-        rfc=request.form.get("rfc"),
-        nombre=request.form.get("nombre"),
-        app=request.form.get("app"),
-        apm=request.form.get("apm"),
-        fech_nac=request.form.get("fech_nac"),
-        tel=request.form.get("tel"),
-        sex=request.form.get("sex"),
-        id_colonia=request.form.get("id_colonia")
-    )
+    persona = Personas()
+    persona.rfc=request.form.get("rfc"),
+    persona.nombre=request.form.get("nombre"),
+    persona.app=request.form.get("app"),
+    persona.apm=request.form.get("apm"),
+    persona.fech_nac=request.form.get("fech_nac"),
+    persona.tel=request.form.get("tel"),
+    persona.sex=request.form.get("sex"),
+    persona.id_colonia=request.form.get("id_colonia")
 
-    user = Usuarios(
-        rfc=request.form.get("rfc"),
-        email=request.form.get("email"),
-        username="username_"+persona.rfc,
-        password=gn_pass(7),
-        id_company=id_company
-    )
 
-    cliente = Clientes(
-        rfc=request.form.get("rfc"),
-        id_umbral=request.form.get("id_umbral"),
-        id_company=id_company
-    )
+    user = Usuarios()
+    user.rfc=request.form.get("rfc"),
+    user.email=request.form.get("email"),
+    user.username="username_"+str(persona.rfc),
+    user.password=gn_pass(7),
+    user.id_company=id_company
 
     try:
         session.add(persona)
-        session.add(cliente)
         session.add(user)
-        session.add_all([persona, cliente, user])
+        session.add_all([persona, user])
         session.commit()
         return jsonify({"mensaje": "¡Nuevo cliente registrado con éxito!", "username": user.username, "password": user.password}), 200
     except exc.IntegrityError as e:

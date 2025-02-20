@@ -4,6 +4,7 @@ from flask import Flask
 from flask_cors import CORS
 
 app = Flask(__name__)
+#CORS(app, resources={r"/*": {"origins": "http://192.168.0.7:4200"}}) 
 
 # Cargar variables desde el archivo .env
 load_dotenv()

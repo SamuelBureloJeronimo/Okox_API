@@ -1,12 +1,15 @@
+import uuid
 from sqlalchemy import func
 from flask_mail import Message
 from sqlalchemy import exc
 from flask import Blueprint, jsonify, request, send_from_directory
 from flask_jwt_extended import create_access_token, decode_token
+from werkzeug.utils import secure_filename
 
 from jwt import DecodeError, ExpiredSignatureError, InvalidTokenError
 
 from database.db import *
+from models.Companies import Companies
 from models.Usuarios import Usuarios
 from models.address.Estados import Estados
 from models.address.Municipios import Municipios
@@ -19,31 +22,63 @@ BP_Public = Blueprint('BP_Public', __name__)
 
 @BP_Public.route("/enviar_usuario/<email>", methods=["POST"])
 def enviar_usuario(email):
-    nombreComp = request.form.get("nombreComp")
-    username = request.form.get("username")
-    password = request.form.get("password")
-    url_login = "http://192.168.1.79:4200/login"
+    # Obtener el token desde el encabezado o cuerpo de la solicitud
+    token = request.headers.get('Authorization')
+    if not token:
+        return jsonify({"error": "Token no proporcionado"}), 401
 
-    # Cargar la plantilla y reemplazar valores
-    with open("email_template.html", "r", encoding="utf-8") as file:
-        html_content = file.read()
+    # Remover el prefijo "Bearer " si está presente
+    if token.startswith("Bearer "):
+        token = token.split("Bearer ")[1]
 
-    html_content = html_content.format(
-        nombre_usuario=nombreComp,
-        usuario=username,
-        contraseña=password,
-        url_login=url_login
-    )
+    try:
+        # Decodificar el token
+        decoded = decode_token(token)
+        #company = 
+        nombreComp = request.form.get("nombreComp")
+        username = request.form.get("username")
+        password = request.form.get("password")
+        url_login = "http://192.168.1.79:4200/login"
 
-    msg = Message("Tu cuenta ha sido creada", recipients=[email])
-    msg.html = html_content
+        # Cargar la plantilla y reemplazar valores
+        with open("email_template.html", "r", encoding="utf-8") as file:
+            html_content = file.read()
 
-    mail.send(msg)
-    return "Correo enviado con éxito"
+        html_content = html_content.format(
+            nombre_usuario=nombreComp,
+            usuario=username,
+            contraseña=password,
+            url_login=url_login
+        )
 
-@BP_Public.route('/image/<path:filename>')
+        msg = Message("Tu cuenta ha sido creada", recipients=[email])
+        msg.html = html_content
+
+        mail.send(msg)
+        return "Correo enviado con éxito"
+        return jsonify({"message": "Token válido", "rol": decoded["role"]}), 200
+    except ExpiredSignatureError:
+        return jsonify({"error": "Token expirado"}), 401
+    except InvalidTokenError:
+        return jsonify({"error": "Token inválido"}), 401
+    except DecodeError:
+        return jsonify({"error": "Error al decodificar el token"}), 400
+     
+
+
+@BP_Public.route('/image/<path:filename>', methods=['GET'])
 def public_files(filename):
     return send_from_directory('../public/image', filename)
+
+@BP_Public.route('/image/clients/<path:filename>', methods=['GET'])
+def public_clients_files(filename):
+    return send_from_directory('../public/image/clients', filename)
+
+@BP_Public.route('/image/companies/<path:filename>', methods=['GET'])
+def public_ccompanies_files(filename):
+    return send_from_directory('../public/image/companies', filename)
+
+
 
 @BP_Public.route('/login', methods=["POST"])
 def login():
@@ -106,6 +141,65 @@ def auth_token():
         return jsonify({"error": "Token inválido"}), 401
     except DecodeError:
         return jsonify({"error": "Error al decodificar el token"}), 400
+
+@BP_Public.route('/change-image', methods=['POST'])
+def change_image():
+    required_fields = ["dest"]
+    missing_fields = [field for field in required_fields if not request.form.get(field)]
+
+    # Validar si falta algún campo
+    if missing_fields:
+        return jsonify({"error": f"Faltan los siguientes campos: {', '.join(missing_fields)}"}), 400
+    # Validar si la imagen está presente
+    if 'img' not in request.files:
+        return jsonify({"error": "El campo 'img' es obligatorio"}), 400
+    
+    try:
+        # Procesar la imagen
+        file = request.files['img']
+        if request.form.get("dest") == "0":
+            email = request.form.get("email")
+            user = session.query(Usuarios).filter_by(email=email).first()
+            print(user.to_dict())
+            if user.imagen == "default_perfil.png":
+                filename = secure_filename(file.filename)
+                ext = os.path.splitext(filename)[1]  # Obtener la extensión
+
+                nuevo_nombre = f"{uuid.uuid4()}{ext}"  # Generar un nuevo nombre único
+                filepath = os.path.join(os.getenv("UPLOAD_FOLDER")+"image/clients/", nuevo_nombre)
+                file.save(filepath)
+                session.query(Usuarios).filter(Usuarios.email == email).update({Usuarios.imagen: nuevo_nombre})
+                session.commit()
+            else:
+                file.save("public/image/clients/"+user.imagen)
+        
+        elif request.form.get("dest") == "4":
+            rfc_user = request.form.get("rfc_user")
+            company = session.query(Companies).filter_by(rfc_user=rfc_user).first()
+            print(company.to_dict())
+            if company.logo == "default_perfil.png":
+                filename = secure_filename(file.filename)
+                ext = os.path.splitext(filename)[1]  # Obtener la extensión
+
+                nuevo_nombre = f"{uuid.uuid4()}{ext}"  # Generar un nuevo nombre único
+                filepath = os.path.join(os.getenv("UPLOAD_FOLDER")+"image/companies/", nuevo_nombre)
+                file.save(filepath)
+                session.query(Companies).filter(Companies.logo == rfc_user).update({Companies.logo: nuevo_nombre})
+                session.commit()
+            else:
+                file.save("public/image/companies/"+company.logo)
+        
+        else:
+            return jsonify("¡No se encontró!"), 400
+        
+        return jsonify("¡Imagen actualizada con éxito!"), 200
+        
+    
+    except exc.IntegrityError as e:
+        session.rollback()
+        return jsonify({
+            "error": (e.args)
+        }), 400 
 
 
 @BP_Public.route('/get-paises', methods=['GET'])

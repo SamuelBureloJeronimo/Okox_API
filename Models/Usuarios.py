@@ -10,7 +10,7 @@ class Usuarios(Base):
     email = Column(String(50), nullable=False, unique=True)
     username = Column(String(50), nullable=False, unique=True)
     password = Column(String(255))
-    rol = Column(Integer, comment='# 0 == Cliente, 1 == Capturista, 2 == Técnico, 3 == Administrador, 4 = Compañia')
+    rol = Column(Integer, default='0',comment='# 0 == Cliente, 1 == Capturista, 2 == Técnico, 3 == Administrador, 4 = Compañia')
     last_session = Column(DateTime)
     fech_created = Column(DateTime, default=func.now(), nullable=False)
     imagen = Column(String(255), default='default_perfil.png')
