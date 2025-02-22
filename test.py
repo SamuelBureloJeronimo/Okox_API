@@ -9,13 +9,13 @@ from flask_jwt_extended import JWTManager, create_access_token, decode_token, ge
 from flask_cors import CORS
 from jwt import InvalidTokenError, ExpiredSignatureError, DecodeError
 
-from Models import Pais
+from models import Pais
 from connection import connect_to_database
 from mysql.connector import Error
 
-from Models.Usuario import Usuario
-from Models.Cliente import Cliente
-from Models.Persona import Persona
+from models.Usuario import Usuario
+from models.Cliente import Cliente
+from models.Persona import Persona
 
 from collections import namedtuple
 

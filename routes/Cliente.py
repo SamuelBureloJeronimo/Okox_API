@@ -9,34 +9,6 @@ from models.Usuarios import Usuarios
 
 BP_Clientes = Blueprint('BP_Clientes', __name__, url_prefix='/clientes')
 
-@BP_Clientes.route('/init-dashboard', methods=["GET"])
-@jwt_required()
-def init_dash_cli():
-    
-    jwt_data = get_jwt()  # Obtiene todo el payload del JWT
-    
-    email = jwt_data.get("sub")  # "sub" es el campo "identity" por defecto
-    id_company = jwt_data.get("id_company")  # Si guardaste "nombre" en el token
-
-    
-    user = session.query(Usuarios).filter_by(email=email).first();
-    company = session.query(Companies).filter_by(rfc_user=id_company).first();
-
-
-    if user is None or company is None:
-        return jsonify({"email": email, "id": id_company}), 400
-
-
-    data = {
-        "email": user.email,
-        "username": user.username,
-        "img_user": user.imagen,
-        "logo": company.logo,
-        "nombre": company.nombre,
-    }
-    return jsonify(data), 200
-
-
 @BP_Clientes.route("/create", methods=["POST"])
 def create_client():
     required_fields = ["rfc", "nombre", "app", "apm", "fech_nac", "sex", "id_colonia", "id_umbral", "id_company"]

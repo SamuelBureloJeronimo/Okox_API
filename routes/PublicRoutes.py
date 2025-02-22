@@ -1,9 +1,10 @@
+from datetime import timedelta
 import uuid
 from sqlalchemy import func
 from flask_mail import Message
 from sqlalchemy import exc
 from flask import Blueprint, jsonify, request, send_from_directory
-from flask_jwt_extended import create_access_token, decode_token
+from flask_jwt_extended import create_access_token, decode_token, get_current_user, get_jwt, jwt_required
 from werkzeug.utils import secure_filename
 
 from jwt import DecodeError, ExpiredSignatureError, InvalidTokenError
@@ -19,6 +20,35 @@ from models.address.Colonias import Colonias
 from config.mail_conf import mail
 
 BP_Public = Blueprint('BP_Public', __name__)
+
+@BP_Public.route('/init-dashboard', methods=["GET"])
+@jwt_required()
+def init_dashboard():
+    
+    jwt_data = get_jwt()  # Obtiene todo el payload del JWT
+    
+    email = jwt_data.get("email")  # "sub" es el campo "identity" por defecto
+    id_company = jwt_data.get("id_company")  # Si guardaste "nombre" en el token
+
+    
+    user = session.query(Usuarios).filter_by(email=email).first();
+    company = session.query(Companies).filter_by(rfc_user=id_company).first();
+
+
+    if user is None or company is None:
+        return jsonify({"email": email, "id": id_company}), 400
+
+
+    data = {
+        "email": user.email,
+        "username": user.username,
+        "img_user": user.imagen,
+        "logo": company.logo,
+        "nombre": company.nombre,
+    }
+    return jsonify(data), 200
+
+
 
 @BP_Public.route("/enviar_usuario/<email>", methods=["POST"])
 def enviar_usuario(email):
@@ -101,12 +131,12 @@ def login():
                 return jsonify({"mensaje": "Correo o contraseña incorrecto"}), 401
 
             # Crea un token de acceso
-            access_token = create_access_token(identity=email, additional_claims={"role": user.rol, "id_company": user.id_company})
+            access_token = create_access_token(identity=str(user.rol), additional_claims={"email": user.email, "id_company": user.id_company})
 
             session.query(Usuarios).filter(Usuarios.rfc == user.rfc).update({ Usuarios.last_session: func.now()})
             session.commit()
 
-            return jsonify({"user": user.to_dict(), "token": access_token})
+            return jsonify(access_token)
         except exc.IntegrityError as e:
             session.rollback()
             return jsonify({
@@ -121,6 +151,7 @@ def login():
     return jsonify("Error en la sesión")
 
 @BP_Public.route('/auth-token', methods=['GET'])
+@jwt_required()
 def auth_token():
     # Obtener el token desde el encabezado o cuerpo de la solicitud
     token = request.headers.get('Authorization')
@@ -134,7 +165,7 @@ def auth_token():
     try:
         # Decodificar el token
         decoded = decode_token(token)
-        return jsonify({"message": "Token válido", "rol": decoded["role"]}), 200
+        return jsonify(decoded), 200
     except ExpiredSignatureError:
         return jsonify({"error": "Token expirado"}), 401
     except InvalidTokenError:
@@ -142,14 +173,17 @@ def auth_token():
     except DecodeError:
         return jsonify({"error": "Error al decodificar el token"}), 400
 
-@BP_Public.route('/change-image', methods=['POST'])
-def change_image():
-    required_fields = ["dest"]
-    missing_fields = [field for field in required_fields if not request.form.get(field)]
-
-    # Validar si falta algún campo
-    if missing_fields:
-        return jsonify({"error": f"Faltan los siguientes campos: {', '.join(missing_fields)}"}), 400
+@BP_Public.route('/change-image-company', methods=['POST'])
+@jwt_required()
+def change_image_company():
+    
+    jwt_data = get_jwt()  # Obtiene todo el payload del JWT
+    id_company = jwt_data.get("id_company")  # "sub" es el campo "identity" por defecto
+    rol = jwt_data.get("sub")  # Si guardaste "nombre" en el token
+    
+    if(rol == "4"):
+        return jsonify("No tienes permisos de administrador"), 401
+    
     # Validar si la imagen está presente
     if 'img' not in request.files:
         return jsonify({"error": "El campo 'img' es obligatorio"}), 400
@@ -157,40 +191,55 @@ def change_image():
     try:
         # Procesar la imagen
         file = request.files['img']
-        if request.form.get("dest") == "0":
-            email = request.form.get("email")
-            user = session.query(Usuarios).filter_by(email=email).first()
-            print(user.to_dict())
-            if user.imagen == "default_perfil.png":
-                filename = secure_filename(file.filename)
-                ext = os.path.splitext(filename)[1]  # Obtener la extensión
+        company = session.query(Companies).filter_by(rfc_user=id_company).first()
+        if company.logo == "default_perfil.png":
+            filename = secure_filename(file.filename)
+            ext = os.path.splitext(filename)[1]  # Obtener la extensión
 
-                nuevo_nombre = f"{uuid.uuid4()}{ext}"  # Generar un nuevo nombre único
-                filepath = os.path.join(os.getenv("UPLOAD_FOLDER")+"image/clients/", nuevo_nombre)
-                file.save(filepath)
-                session.query(Usuarios).filter(Usuarios.email == email).update({Usuarios.imagen: nuevo_nombre})
-                session.commit()
-            else:
-                file.save("public/image/clients/"+user.imagen)
-        
-        elif request.form.get("dest") == "4":
-            rfc_user = request.form.get("rfc_user")
-            company = session.query(Companies).filter_by(rfc_user=rfc_user).first()
-            print(company.to_dict())
-            if company.logo == "default_perfil.png":
-                filename = secure_filename(file.filename)
-                ext = os.path.splitext(filename)[1]  # Obtener la extensión
-
-                nuevo_nombre = f"{uuid.uuid4()}{ext}"  # Generar un nuevo nombre único
-                filepath = os.path.join(os.getenv("UPLOAD_FOLDER")+"image/companies/", nuevo_nombre)
-                file.save(filepath)
-                session.query(Companies).filter(Companies.logo == rfc_user).update({Companies.logo: nuevo_nombre})
-                session.commit()
-            else:
-                file.save("public/image/companies/"+company.logo)
-        
+            nuevo_nombre = f"{uuid.uuid4()}{ext}"  # Generar un nuevo nombre único
+            filepath = os.path.join(os.getenv("UPLOAD_FOLDER")+"image/companies/", nuevo_nombre)
+            file.save(filepath)
+            session.query(Companies).filter(Companies.logo == id_company).update({Companies.logo: nuevo_nombre})
+            session.commit()
         else:
-            return jsonify("¡No se encontró!"), 400
+            file.save("public/image/companies/"+company.logo)
+        
+        return jsonify("¡Imagen actualizada con éxito!"), 200
+        
+    
+    except exc.IntegrityError as e:
+        session.rollback()
+        return jsonify({
+            "error": (e.args)
+        }), 400 
+
+@BP_Public.route('/change-image-profile', methods=['POST'])
+@jwt_required()
+def change_image_perfil():
+    
+    jwt_data = get_jwt()  # Obtiene todo el payload del JWT
+    
+    email = jwt_data.get("email")  # "sub" es el campo "identity" por defecto
+    
+    # Validar si la imagen está presente
+    if 'img' not in request.files:
+        return jsonify({"error": "El campo 'img' es obligatorio"}), 400
+    
+    try:
+        # Procesar la imagen
+        file = request.files['img']
+        user = session.query(Usuarios).filter_by(email=email).first()
+        if user.imagen == "default_perfil.png":
+            filename = secure_filename(file.filename)
+            ext = os.path.splitext(filename)[1]  # Obtener la extensión
+
+            nuevo_nombre = f"{uuid.uuid4()}{ext}"  # Generar un nuevo nombre único
+            filepath = os.path.join(os.getenv("UPLOAD_FOLDER")+"image/clients/", nuevo_nombre)
+            file.save(filepath)
+            session.query(Usuarios).filter(Usuarios.email == email).update({Usuarios.imagen: nuevo_nombre})
+            session.commit()
+        else:
+            file.save("public/image/clients/"+user.imagen)
         
         return jsonify("¡Imagen actualizada con éxito!"), 200
         

@@ -11,29 +11,6 @@ from models.Usuarios import Usuarios
 
 BP_Administracion = Blueprint('BP_Administracion', __name__, url_prefix='/admin')
 
-@BP_Administracion.route('/init-dashboard', methods=["GET"])
-@jwt_required()
-def init_dash():
-    jwt_data = get_jwt()  # Obtiene todo el payload del JWT
-    
-    email = jwt_data.get("sub")  # "sub" es el campo "identity" por defecto
-    id_company = jwt_data.get("id_company")  # "id_company" en el token
-    
-    user = session.query(Usuarios).filter_by(email=email).first();
-    company = session.query(Companies).filter_by(rfc_user=id_company).first();
-
-    if user is None or company is None:
-        return jsonify({"email": email, "id": id_company}), 400
-
-    data = {
-        "email": user.email,
-        "username": user.username,
-        "img_user": user.imagen,
-        "logo": company.logo,
-        "nombre": company.nombre,
-    }
-    return jsonify(data), 200
-
 @BP_Administracion.route('/create-user', methods=['POST'])
 @jwt_required()
 def create_new_user():

@@ -4,7 +4,6 @@ from flask import Flask
 from flask_cors import CORS
 
 app = Flask(__name__)
-#CORS(app, resources={r"/*": {"origins": "http://192.168.0.7:4200"}}) 
 
 # Cargar variables desde el archivo .env
 load_dotenv()
@@ -12,8 +11,8 @@ if not os.path.exists(os.getenv("UPLOAD_FOLDER")):
     os.makedirs(os.getenv("UPLOAD_FOLDER"))
 
 
-from config.bp_conf import bp
 from config.jwt_conf import jwt
+from config.bp_conf import bp
 from config.mail_conf import mail
 
 app = bp
