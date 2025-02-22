@@ -14,6 +14,10 @@ BP_Administracion = Blueprint('BP_Administracion', __name__, url_prefix='/admin'
 @BP_Administracion.route('/create-user', methods=['POST'])
 @jwt_required()
 def create_new_user():
+    jwt_data = get_jwt()  # Obtiene todo el payload del JWT
+    
+    id_company = jwt_data.get("id_company")  # Si guardaste "nombre" en el token
+
 
     # Obtener el token desde el encabezado o cuerpo de la solicitud
     token = request.headers.get('Authorization')
@@ -21,9 +25,6 @@ def create_new_user():
     # Remover el prefijo "Bearer " si está presente
     if token.startswith("Bearer "):
         token = token.split("Bearer ")[1]
-    
-    # Decodificar el token
-    decoded = decode_token(token)
 
     required_fields = ["rfc", "nombre", "app", "apm", "fech_nac", "sex", "id_colonia", "rol", "tel", "email"]
     missing_fields = [field for field in required_fields if not request.form.get(field)]
@@ -55,26 +56,19 @@ def create_new_user():
         username="user_"+persona.rfc,
         password=gn_pass(7),
         rol=request.form.get("rol"),
-        id_company=decoded["id_company"]
+        id_company=id_company
     )
-
     try:
         session.add(persona)
         session.add(user)
         session.add_all([persona, user])
         session.commit()
-        return jsonify({"mensaje": "¡Nuevo usuario a sido registrado con éxito!" , "pass": user.password}), 200
-    except exc.IntegrityError as e:
-        session.rollback()
-        return jsonify({
-            "error": (e.args)
-        }), 400 
-
+        return jsonify({"mensaje": "¡Nuevo usuario a sido registrado con éxito!", "user": user.username, "pass": user.password}), 200
     except exc.SQLAlchemyError as e:
         session.rollback()
         return jsonify({
             "error": (e.args)
-        }), 500
+        }), 500 
     
 
 def gn_pass(longitud=12):

@@ -51,21 +51,24 @@ def init_dashboard():
 
 
 @BP_Public.route("/enviar_usuario/<email>", methods=["POST"])
+@jwt_required()
 def enviar_usuario(email):
-    # Obtener el token desde el encabezado o cuerpo de la solicitud
-    token = request.headers.get('Authorization')
-    if not token:
-        return jsonify({"error": "Token no proporcionado"}), 401
+    
+    required_fields = ["username", "password"]
+    missing_fields = [field for field in required_fields if not request.form.get(field)]
 
-    # Remover el prefijo "Bearer " si está presente
-    if token.startswith("Bearer "):
-        token = token.split("Bearer ")[1]
+    # Validar si falta algún campo
+    if missing_fields:
+        return jsonify({"error": f"Faltan los siguientes campos: {', '.join(missing_fields)}"}), 400
+    
+    jwt_data = get_jwt()  # Obtiene todo el payload del JWT
+    
+    id_company = jwt_data.get("id_company")  # Si guardaste "nombre" en el token
 
     try:
+        company = session.query(Companies).get(id_company);
         # Decodificar el token
-        decoded = decode_token(token)
-        #company = 
-        nombreComp = request.form.get("nombreComp")
+        nombreComp = company.nombre
         username = request.form.get("username")
         password = request.form.get("password")
         url_login = "http://192.168.1.79:4200/login"
@@ -85,8 +88,7 @@ def enviar_usuario(email):
         msg.html = html_content
 
         mail.send(msg)
-        return "Correo enviado con éxito"
-        return jsonify({"message": "Token válido", "rol": decoded["role"]}), 200
+        return jsonify("Correo enviado con éxito"), 200
     except ExpiredSignatureError:
         return jsonify({"error": "Token expirado"}), 401
     except InvalidTokenError:
@@ -128,7 +130,9 @@ def login():
             user = session.query(Usuarios).filter_by(email=email, password=password).first()
 
             if user is None:
-                return jsonify({"mensaje": "Correo o contraseña incorrecto"}), 401
+                user = session.query(Usuarios).filter_by(username=email, password=password).first()
+                if user is None:
+                    return jsonify({"mensaje": "Correo o contraseña incorrecto"}), 401
 
             # Crea un token de acceso
             access_token = create_access_token(identity=str(user.rol), additional_claims={"email": user.email, "id_company": user.id_company})
