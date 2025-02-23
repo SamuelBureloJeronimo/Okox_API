@@ -70,6 +70,54 @@ def create_new_user():
             "error": (e.args)
         }), 500 
     
+@BP_Administracion.route('/get-users', methods=['GET'])
+@jwt_required()
+def get_users():
+    jwt_data = get_jwt()  # Obtiene todo el payload del JWT
+    
+    rol = jwt_data.get("sub") 
+
+    if rol != "3":
+        return jsonify("No tienes permisos de acceso"), 401
+    
+    # Hacemos un JOIN con la tabla personas para obtener el nombre del usuario
+    users = session.query(Usuarios, Personas.nombre, Personas.app, Personas.apm).join(Personas, Personas.rfc == Usuarios.rfc)\
+        .filter((Usuarios.rol > 0) & (Usuarios.rol < 3)).all()
+
+    # Convertir lista de tuplas en lista de diccionarios
+    users_list = [{"nombre": nom+" "+app+" "+apm, **usuario.to_dict()} for usuario, nom, app, apm in users]
+
+    return jsonify(users_list), 200
+
+@BP_Administracion.route('/search-tec/<rfc>', methods=['GET'])
+@jwt_required()
+def search_tec(rfc):
+    jwt_data = get_jwt()  # Obtiene todo el payload del JWT
+    
+    rol = jwt_data.get("sub") 
+
+    if rol != "3":
+        return jsonify("No tienes permisos de acceso"), 401
+    
+    # Hacemos un JOIN con la tabla personas para obtener el nombre del usuario
+    techn = session.query(Usuarios, Personas.nombre, Personas.app, Personas.apm).join(Personas, Personas.rfc == Usuarios.rfc)\
+        .filter_by(rfc=rfc).first()
+
+    if techn is None:
+        return jsonify("No se encontro usuario con ese rfc"), 400
+    
+    # Convertir lista de tuplas en lista de diccionarios
+    usuario_obj, nombre, app, apm = techn
+    user_data = {
+        **usuario_obj.to_dict(),  # Desempaquetamos el diccionario original
+        "nombre": nombre +" "+ app +" "+ apm
+    } 
+
+    if usuario_obj.rol != 2:
+        return jsonify("Este usuario no es un técnico"), 400
+
+    return jsonify(user_data), 200
+
 
 def gn_pass(longitud=12):
     caracteres = string.ascii_letters + string.digits + string.punctuation
