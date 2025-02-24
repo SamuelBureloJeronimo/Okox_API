@@ -239,14 +239,14 @@ def change_image_perfil():
         # Procesar la imagen
         file = request.files['img']
         user = session.query(Usuarios).filter_by(email=email).first()
-        if user.imagen == "default_perfil.png":
+        if user.imagen == "/clients/default_perfil.png":
             filename = secure_filename(file.filename)
             ext = os.path.splitext(filename)[1]  # Obtener la extensión
 
             nuevo_nombre = f"{uuid.uuid4()}{ext}"  # Generar un nuevo nombre único
             filepath = os.path.join(os.getenv("UPLOAD_FOLDER")+"image/clients/", nuevo_nombre)
             file.save(filepath)
-            session.query(Usuarios).filter(Usuarios.email == email).update({Usuarios.imagen: nuevo_nombre})
+            session.query(Usuarios).filter(Usuarios.email == email).update({Usuarios.imagen: "/clients/"+nuevo_nombre})
             session.commit()
         else:
             file.save("public/image"+user.imagen)

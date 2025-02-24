@@ -36,7 +36,7 @@ def create_owner():
         ext = os.path.splitext(filename)[1]  # Obtener la extensión
 
         nuevo_nombre = f"{uuid.uuid4()}{ext}"  # Generar un nuevo nombre único
-        filepath = os.path.join(os.getenv("UPLOAD_FOLDER")+"image/", nuevo_nombre)
+        filepath = os.path.join(os.getenv("UPLOAD_FOLDER")+"image/companies/", nuevo_nombre)
         
         file.save(filepath)  # Guardar el archivo
     else:
@@ -54,7 +54,7 @@ def create_owner():
 
     company = Companies()
     company.rfc_user=request.form.get("rfc"),
-    company.logo=nuevo_nombre,
+    company.logo="/companies/"+nuevo_nombre,
     company.nombre=request.form.get("nombre_empr"),
     company.descripcion=request.form.get("descripcion"),
     company.telefono=request.form.get("tel_empr"),
