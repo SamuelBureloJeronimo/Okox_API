@@ -7,7 +7,7 @@ class Companies(Base):
     __tablename__ = 'companies'
     
     rfc_user = Column(String(13), primary_key=True, nullable=False)
-    logo = Column(String(255), nullable=True)
+    logo = Column(String(255), nullable=True, default="/companies/default_perfil.png")
     nombre = Column(String(50), nullable=True)
     telefono = Column(String(40), nullable=True)
     facebook = Column(String(150), nullable=True)

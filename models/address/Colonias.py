@@ -19,7 +19,6 @@ class Colonias(Base):
     fk_companies = relationship("Companies", back_populates="colonias")
     fk_contratos = relationship("Contratos", back_populates="colonias")
     fk_colonia_rf = relationship("Reportes_Fugas", back_populates="colonias")
-    fk_colonias_afectadas = relationship("Colonias_Afectadas", back_populates="colonias")
 
 
     def to_dict(self):

@@ -1,4 +1,5 @@
 from datetime import timedelta
+import re
 import uuid
 from sqlalchemy import func
 from flask_mail import Message
@@ -53,20 +54,26 @@ def init_dashboard():
 @BP_Public.route("/enviar_usuario/<email>", methods=["POST"])
 @jwt_required()
 def enviar_usuario(email):
-    
+    # Expresión regular para validar el email
+    email_regex = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
+
+    # Validar el formato del email
+    if not re.match(email_regex, email):
+        return jsonify({"error": "El correo electrónico no tiene un formato válido"}), 400
+
     required_fields = ["username", "password"]
     missing_fields = [field for field in required_fields if not request.form.get(field)]
 
     # Validar si falta algún campo
     if missing_fields:
         return jsonify({"error": f"Faltan los siguientes campos: {', '.join(missing_fields)}"}), 400
-    
+
     jwt_data = get_jwt()  # Obtiene todo el payload del JWT
     
     id_company = jwt_data.get("id_company")  # Si guardaste "nombre" en el token
 
     try:
-        company = session.query(Companies).get(id_company);
+        company = session.query(Companies).get(id_company)
         # Decodificar el token
         nombreComp = company.nombre
         username = request.form.get("username")
@@ -95,10 +102,9 @@ def enviar_usuario(email):
         return jsonify({"error": "Token inválido"}), 401
     except DecodeError:
         return jsonify({"error": "Error al decodificar el token"}), 400
-     
 
 
-@BP_Public.route('/image/<path:filename>', methods=['GET'])
+@BP_Public.route('/<path:filename>', methods=['GET'])
 def public_files(filename):
     return send_from_directory('../public/image', filename)
 
@@ -135,7 +141,7 @@ def login():
                     return jsonify({"mensaje": "Correo o contraseña incorrecto"}), 401
 
             # Crea un token de acceso
-            access_token = create_access_token(identity=str(user.rol), additional_claims={"email": user.email, "id_company": user.id_company})
+            access_token = create_access_token(identity=str(user.rol), additional_claims={"email": user.email, "id_company": user.id_company, "rfc": user.rfc})
 
             session.query(Usuarios).filter(Usuarios.rfc == user.rfc).update({ Usuarios.last_session: func.now()})
             session.commit()
@@ -243,7 +249,7 @@ def change_image_perfil():
             session.query(Usuarios).filter(Usuarios.email == email).update({Usuarios.imagen: nuevo_nombre})
             session.commit()
         else:
-            file.save("public/image/clients/"+user.imagen)
+            file.save("public/image"+user.imagen)
         
         return jsonify("¡Imagen actualizada con éxito!"), 200
         
@@ -286,19 +292,17 @@ def get_paises():
 @BP_Public.route('/get-estados/<id_pais>', methods=['GET'])
 def get_estados(id_pais):
     try:
-        with Session() as session:
-
-            estados = session.query(Estados).filter_by(pais=id_pais).all();
+        estados = session.query(Estados).filter_by(pais=id_pais).all();
             
-            if(estados is None):
-                return jsonify({
-                "mensaje": "No se encontro paises"
-                }), 400
-        
-            # Convertir lista de objetos en lista de diccionarios
-            estados_list = [est.to_dict() for est in estados]
+        if(estados is None):
+            return jsonify({
+            "mensaje": "No se encontro paises"
+            }), 400
+    
+        # Convertir lista de objetos en lista de diccionarios
+        estados_list = [est.to_dict() for est in estados]
 
-            return jsonify(estados_list), 200
+        return jsonify(estados_list), 200
         
     except exc.IntegrityError as e:
         session.rollback()
@@ -350,6 +354,38 @@ def get_colonias(id_municipio):
                 session = Session()  # Reabrir la sesión
 
             colns = session.query(Colonias).filter_by(municipio=id_municipio).all();
+        
+            if(colns is None):
+                return jsonify({
+                "mensaje": "No se encontro Colonias"
+                }), 400
+
+            # Convertir lista de objetos en lista de diccionarios
+            colonias_list = [col.to_dict() for col in colns]
+
+            return jsonify(colonias_list), 200
+        
+    except exc.IntegrityError as e:
+        session.rollback()
+        return jsonify({
+            "error": (e.args)
+        }), 400 
+
+    except exc.SQLAlchemyError as e:
+        session.rollback()
+        return jsonify({
+            "error": "Error en la base de datos"
+        }), 500
+
+@BP_Public.route('/get-colonias-by-cp/<cp>', methods=['GET'])
+def get_colonias_by_cp(cp):
+
+    try:
+        with Session() as session:
+            if not session.is_active:
+                session = Session()  # Reabrir la sesión
+
+            colns = session.query(Colonias).filter_by(codigo_postal=cp).all();
         
             if(colns is None):
                 return jsonify({

@@ -10,8 +10,8 @@ class Reportes_Fugas(Base):
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     rfc_cli = Column(String(13), ForeignKey('usuarios.rfc'), nullable=False)
     foto = Column(String(255), nullable=False)
-    mensaje = Column(String(500), nullable=False)
-    atendido = Column(Boolean, nullable=False)
+    razon = Column(String(255), nullable=False)
+    atendido = Column(Boolean, nullable=False, default=False)
     id_colonia = Column(Integer, ForeignKey('colonias.id'), nullable=False)
     fecha_subida = Column(DateTime, default=func.now(), nullable=False)
     
@@ -24,7 +24,7 @@ class Reportes_Fugas(Base):
             'id': self.id,
             'rfc_cli': self.rfc_cli,
             'foto': self.foto,
-            'mensaje': self.mensaje,
+            'razon': self.razon,
             'atendido': self.atendido,
             'id_colonia': self.id_colonia
         }

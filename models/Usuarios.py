@@ -13,7 +13,7 @@ class Usuarios(Base):
     rol = Column(Integer, default='0',comment='# 0 == Cliente, 1 == Capturista, 2 == Técnico, 3 == Administrador, 4 = Compañia')
     last_session = Column(DateTime)
     fech_created = Column(DateTime, default=func.now(), nullable=False)
-    imagen = Column(String(255), default='default_perfil.png')
+    imagen = Column(String(255), default='/clients/default_perfil.png')
     id_company = Column(String(13), ForeignKey('companies.rfc_user'))
 
     # ForaignKey propias de la clase

@@ -12,7 +12,6 @@ from models.Usuarios import Usuarios
 # Modelos para el administrador
 from models.Suspensiones import Suspensiones
 from models.Mantenimientos import Mantenimientos
-from models.Colonias_Afectadas import Colonias_Afectadas
 
 
 # Modelos para el cliente

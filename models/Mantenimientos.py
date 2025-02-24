@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from database.db import Base
 
@@ -11,13 +11,12 @@ class Mantenimientos(Base):
     titulo = Column(String(80), nullable=False)
     descripcion = Column(String(200), nullable=False)
     fecha = Column(DateTime, nullable=False)
+    col_afec = Column(Text, nullable=False)
     
     # ForaignKey propias de la clase
-    tecnico = relationship("Usuarios", foreign_keys="[Mantenimientos.rfc_tec]", back_populates="mantenimientos_tecnico")
+    tecnico = relationship("Usuarios", back_populates="mantenimientos_tecnico")
     companies = relationship("Companies", back_populates="mantenimientos")
-    # ForaignKey que apuntan a otra clase <-
-    fk_mantenimientos = relationship("Colonias_Afectadas", back_populates="mantenimientos")
-    
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -25,6 +24,6 @@ class Mantenimientos(Base):
             'rfc_company': self.rfc_company,
             'titulo': self.titulo,
             'descripcion': self.descripcion,
-            'fecha': self.fecha.isoformat(),
-            'colonia_afectada': self.colonia_afectada,
+            'fecha': self.fecha,
+            'col_afec': self.col_afec,
         }
