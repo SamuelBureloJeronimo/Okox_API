@@ -8,6 +8,7 @@ class Dispositivos(Base):
     Wifi_MacAddress = Column(String(17), primary_key=True, nullable=False)
     rfc_cli = Column(String(13), ForeignKey('usuarios.rfc'), nullable=False)
     valvula = Column(Integer, nullable=True)
+    status = Column(Integer, nullable=True)
     last_connection = Column(DateTime)
     
     # Relaciones

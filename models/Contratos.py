@@ -11,8 +11,8 @@ class Contratos(Base):
     fech_vige = Column(Date, nullable=False)
     tipo_fact = Column(String(30), nullable=False)
     tipo_serv = Column(String(30), nullable=False)
-    min_L = Column(Float, nullable=False)
     max_L = Column(Float, nullable=False)
+    status = Column(Integer, default=0,nullable=False)
     id_colonia = Column(Integer, ForeignKey('colonias.id'), nullable=False)
     
     # Relaciones

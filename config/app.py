@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from flask import Flask
 from flask_cors import CORS
+from database.db import *
 
 app = Flask(__name__)
 
@@ -9,7 +10,6 @@ app = Flask(__name__)
 load_dotenv()
 if not os.path.exists(os.getenv("UPLOAD_FOLDER")):
     os.makedirs(os.getenv("UPLOAD_FOLDER"))
-
 
 from config.jwt_conf import jwt
 from config.bp_conf import bp

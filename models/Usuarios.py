@@ -23,7 +23,7 @@ class Usuarios(Base):
     mantenimientos_tecnico = relationship("Mantenimientos", foreign_keys="[Mantenimientos.rfc_tec]", back_populates="tecnico")
     notificaciones = relationship("Notificaciones", back_populates="usuario")
     pagos = relationship("Pagos", back_populates="cliente")
-    fk_reportes_fugas = relationship("Reportes_Fugas", back_populates="clientes")
+    fk_reportes_fugas = relationship("Reportes_Cli", back_populates="clientes")
     fk_suspensiones = relationship("Suspensiones", back_populates="usuarios")
     fk_tareas_tecnicos = relationship("Tareas_Tecnicos", back_populates="tecnico")
 

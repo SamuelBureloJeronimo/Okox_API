@@ -1,26 +1,23 @@
-from datetime import datetime
 import secrets
 import string
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import decode_token, get_jwt, get_jwt_identity, jwt_required
+from flask_jwt_extended import get_jwt, jwt_required
 from database.db import *
-from sqlalchemy import exc
-from models.Companies import Companies
+from index import with_session
 from models.Mantenimientos import Mantenimientos
 from models.Personas import Personas
 from models.Usuarios import Usuarios
+from sqlalchemy.orm import aliased
 
 
 BP_Administracion = Blueprint('BP_Administracion', __name__, url_prefix='/admin')
 
 @BP_Administracion.route('/create-user', methods=['POST'])
 @jwt_required()
-def create_new_user():
+@with_session
+def create_new_user(session):
     jwt_data = get_jwt()  # Obtiene todo el payload del JWT
-    
     id_company = jwt_data.get("id_company")  # Si guardaste "nombre" en el token
-
-
     # Obtener el token desde el encabezado o cuerpo de la solicitud
     token = request.headers.get('Authorization')
 
@@ -60,45 +57,50 @@ def create_new_user():
         rol=request.form.get("rol"),
         id_company=id_company
     )
-    try:
-        session.add_all([persona, user])
-        session.commit()
-        return jsonify({"mensaje": "¡Nuevo usuario a sido registrado con éxito!", "user": user.username, "pass": user.password}), 200
-    except exc.SQLAlchemyError as e:
-        session.rollback()
-        return jsonify({
-            "error": (e.args)
-        }), 500 
+    session.add_all([persona, user])
+    session.commit()
+    return jsonify({"mensaje": "¡Nuevo usuario a sido registrado con éxito!"}), 200
+
     
 @BP_Administracion.route('/get-users', methods=['GET'])
 @jwt_required()
-def get_users():
+@with_session
+def get_users(session):
     jwt_data = get_jwt()  # Obtiene todo el payload del JWT
     
     rol = jwt_data.get("sub") 
 
     if rol != "3":
         return jsonify("No tienes permisos de acceso"), 401
-    
-    # Hacemos un JOIN con la tabla personas para obtener el nombre del usuario
-    users = session.query(Usuarios, Personas.nombre, Personas.app, Personas.apm).join(Personas, Personas.rfc == Usuarios.rfc)\
-        .filter((Usuarios.rol > 0) & (Usuarios.rol < 3)).all()
+    # Alias para evitar conflictos en la consulta
+    persona_alias = aliased(Personas)
 
-    # Convertir lista de tuplas en lista de diccionarios
-    users_list = [{"nombre": nom+" "+app+" "+apm, **usuario.to_dict()} for usuario, nom, app, apm in users]
+    # Hacemos el JOIN con Personas
+    users = session.query(Usuarios, persona_alias).join(persona_alias, Usuarios.rfc == persona_alias.rfc)\
+    .filter((Usuarios.rol > 0) & (Usuarios.rol < 3)).all()
+
+    # Convertir a lista de diccionarios sin escribir campo por campo
+    users_list = [
+        {**usuario.__dict__, **persona.__dict__}
+        for usuario, persona in users
+    ]
+
+    # Eliminar claves internas de SQLAlchemy (que inician con '_')
+    for user in users_list:
+        user.pop('_sa_instance_state', None)
 
     return jsonify(users_list), 200
 
 @BP_Administracion.route('/search-tec/<rfc>', methods=['GET'])
 @jwt_required()
-def search_tec(rfc):
+@with_session
+def search_tec(session, rfc):
     jwt_data = get_jwt()  # Obtiene todo el payload del JWT
-    
     rol = jwt_data.get("sub") 
 
     if rol != "3":
         return jsonify("No tienes permisos de acceso"), 401
-    
+
     # Hacemos un JOIN con la tabla personas para obtener el nombre del usuario
     techn = session.query(Usuarios, Personas.nombre, Personas.app, Personas.apm).join(Personas, Personas.rfc == Usuarios.rfc)\
         .filter_by(rfc=rfc).first()
@@ -121,7 +123,8 @@ def search_tec(rfc):
 
 @BP_Administracion.route('/register-manten', methods=['POST'])
 @jwt_required()
-def register_manten():
+@with_session
+def register_manten(session):
     required_fields = ["rfc_tec", "titulo", "descripcion", "fecha", "col_afec"]
     missing_fields = [field for field in required_fields if not request.form.get(field)]
 
@@ -146,15 +149,10 @@ def register_manten():
         col_afec=request.form.get("col_afec")
     )
 
-    try:
-        session.add(mantenimiento)
-        session.commit()
-        return jsonify("¡El mantenimiento se registro correctamente"), 200
-    except exc.SQLAlchemyError as e:
-        session.rollback()
-        return jsonify({
-            "error": (e.args)
-        }), 500 
+    session.add(mantenimiento)
+    session.commit()
+    return jsonify("¡El mantenimiento se registro correctamente"), 200
+
 
 
     

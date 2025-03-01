@@ -1,11 +1,11 @@
-from sqlalchemy import Column, String, Double, DateTime, ForeignKey
+from sqlalchemy import Column, String, Double, DateTime, ForeignKey, func
 from sqlalchemy.orm import relationship
 from database.db import Base
 
 class Sensores_Log(Base):
     __tablename__ = 'sensores_log'
     
-    fecha = Column(DateTime, primary_key=True, nullable=False)
+    fecha = Column(DateTime, primary_key=True, default=func.now(), nullable=False)
     Wifi_MacAddress = Column(String(17), ForeignKey('dispositivos.Wifi_MacAddress'), nullable=False)
     presion = Column(Double, nullable=False, default=0)
     caudal = Column(Double, nullable=False, default=0)

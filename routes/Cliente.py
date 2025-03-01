@@ -2,19 +2,17 @@ import uuid
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import get_jwt, jwt_required
 from database.db import *
-from sqlalchemy import exc
 from werkzeug.utils import secure_filename
 
-from models.Companies import Companies
-from models.Personas import Personas
-from models.Reportes_Fugas import Reportes_Fugas
-from models.Usuarios import Usuarios
+from index import with_session
+from models.Reportes_Cli import Reportes_Cli
 
 BP_Clientes = Blueprint('BP_Clientes', __name__, url_prefix='/clientes')
 
 @BP_Clientes.route("/upload-report", methods=["POST"])
 @jwt_required()
-def upload_report():
+@with_session
+def upload_report(session):
     required_fields = ["razon", "id_col"]
     missing_fields = [field for field in required_fields if not request.form.get(field)]
 
@@ -42,43 +40,28 @@ def upload_report():
     else:
         filepath = None
     
-    report = Reportes_Fugas(
+    report = Reportes_Cli(
         rfc_cli=rfc,
         foto="/reportes/"+nuevo_nombre,
         razon=request.form.get("razon"),
         id_colonia=request.form.get("id_col")
     )
-    
-    try:
-        session.add(report)
-        session.commit()
-        return jsonify({"mensaje": "¡Nuevo reporte registrado con éxito!"}), 200
-    except exc.IntegrityError as e:
-        session.rollback()
-        return jsonify({
-            "error": (e.args)
-        }), 400 
 
-    except exc.SQLAlchemyError as e:
-        session.rollback()
-        return jsonify({
-            "error": "Error en la base de datos"
-        }), 500
+    session.add(report)
+    session.commit()
+    return jsonify({"mensaje": "¡Nuevo reporte registrado con éxito!"}), 200
+
     
 @BP_Clientes.route("/get-all-reports", methods=["GET"])
 @jwt_required()
-def get_all_reports():
+@with_session
+def get_all_reports(session):
     jwt_data = get_jwt()  # Obtiene todo el payload del JWT
     
     rfc = jwt_data.get("rfc")
 
-    try:
-        report = session.query(Reportes_Fugas).filter_by(rfc_cli=rfc).all()
-        # Convertir lista de objetos en lista de diccionarios
-        report_list = [rep.to_dict() for rep in report]
-        return jsonify(report_list), 200
-    except exc.IntegrityError as e:
-        session.rollback()
-        return jsonify({
-            "error": (e.args)
-        }), 400 
+    report = session.query(Reportes_Cli).filter_by(rfc_cli=rfc).all()
+    # Convertir lista de objetos en lista de diccionarios
+    report_list = [rep.to_dict() for rep in report]
+
+    return jsonify(report_list), 200

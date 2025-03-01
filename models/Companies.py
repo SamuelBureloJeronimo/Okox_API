@@ -13,7 +13,7 @@ class Companies(Base):
     facebook = Column(String(150), nullable=True)
     linkedIn = Column(String(150), nullable=True)
     link_x = Column(String(150), nullable=True)
-    descripcion = Column(Text, nullable=True)
+    descripcion = Column(String(120), nullable=True)
     id_colonia = Column(Integer, ForeignKey('colonias.id'), nullable=True)
     
     # ForaignKey propias de la clase

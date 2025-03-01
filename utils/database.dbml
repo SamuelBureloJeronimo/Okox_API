@@ -1,203 +1,15 @@
-Table "colonias" {
-  "id" int [pk, not null, increment]
-  "nombre" varchar(100) [not null]
-  "ciudad" varchar(100) [not null]
-  "municipio" int
-  "asentamiento" varchar(100)
-  "codigo_postal" int
-
-  Indexes {
-    municipio [type: btree, name: "municipio"]
-  }
+Table "actions_users" {
+  "fech" datetime [pk, not null, note: 'En minutos 00 y segundos 00']
+  "session_id" int [not null, default: 0, note: 'Durante que sesion el usuario realizo esta acción']
+  "action" varchar(50) [not null, note: 'Qué acción hizo']
 }
 
-Table "colonias_afectadas" {
-  "id_mantenimiento" int [not null]
-  "id_colonia" int [not null]
-
-  Indexes {
-    id_colonia [type: btree, name: "id_colonia"]
-    (id_mantenimiento, id_colonia) [pk, name: "PRIMARY"]
-  }
-}
-
-Table "companies" {
-  "rfc_user" varchar(13) [pk, not null]
-  "logo" varchar(255)
-  "nombre" varchar(50)
-  "telefono" varchar(40)
-  "facebook" varchar(150)
-  "linkedIn" varchar(150)
-  "link_x" varchar(150)
-  "descripcion" text
-  "id_colonia" int
-
-  Indexes {
-    id_colonia [type: btree, name: "id_colonia"]
-  }
-}
-
-Table "contratos" {
-  "id" int [pk, not null, increment]
-  "rfc_cli" varchar(13) [not null]
-  "fech_alta" date [not null]
-  "fech_vige" date [not null]
-  "tipo_fact" varchar(30) [not null]
-  "tipo_serv" varchar(30) [not null]
-  "min_L" float [not null]
-  "max_L" float [not null]
-  "id_colonia" int [not null]
-
-  Indexes {
-    id_colonia [type: btree, name: "id_colonia"]
-    rfc_cli [type: btree, name: "rfc_cli"]
-  }
-}
-
-Table "dispositivos" {
-  "Wifi_MacAddress" varchar(17) [pk, not null]
-  "rfc_cli" varchar(13) [not null]
-  "valvula" int
-  "last_connection" datetime
-
-  Indexes {
-    rfc_cli [type: btree, name: "rfc_cli"]
-  }
-}
-
-Table "estados" {
-  "id" int [pk, not null, increment]
-  "nombre" varchar(100) [not null]
-  "pais" int
-
-  Indexes {
-    pais [type: btree, name: "pais"]
-  }
-}
-
-Table "mantenimientos" {
-  "id" int [pk, not null, increment]
-  "rfc_tec" varchar(13)
-  "rfc_company" varchar(13)
-  "titulo" varchar(80) [not null]
-  "descripcion" varchar(200) [not null]
-  "fecha" datetime [not null]
-
-  Indexes {
-    rfc_company [type: btree, name: "rfc_company"]
-    rfc_tec [type: btree, name: "rfc_tec"]
-  }
-}
-
-Table "municipios" {
-  "id" int [pk, not null, increment]
-  "nombre" varchar(100) [not null]
-  "estado" int
-
-  Indexes {
-    estado [type: btree, name: "estado"]
-  }
-}
-
-Table "notificaciones" {
-  "id" int [pk, not null, increment]
-  "rfc_user" varchar(13)
-  "asunto" varchar(80) [not null]
-  "descripcion" varchar(200) [not null]
-  "tipo" varchar(80) [not null]
-  "fecha_envio" varchar(80) [not null]
-
-  Indexes {
-    rfc_user [type: btree, name: "rfc_user"]
-  }
-}
-
-Table "pagos" {
-  "id" int [pk, not null, increment]
-  "rfc_cli" varchar(13) [not null]
-  "comprobante" varchar(255) [not null]
-  "monto" float [not null]
-  "fecha_pago" datetime [not null]
-  "fecha_subida" datetime [not null]
-
-  Indexes {
-    rfc_cli [type: btree, name: "rfc_cli"]
-  }
-}
-
-Table "paises" {
-  "id" int [pk, not null, increment]
-  "nombre" varchar(100) [not null]
-}
-
-Table "personas" {
-  "rfc" varchar(13) [pk, not null]
-  "nombre" varchar(100) [not null]
-  "app" varchar(100) [not null]
-  "apm" varchar(100) [not null]
-  "fech_nac" date [not null]
-  "sex" varchar(1) [not null]
-  "tel" varchar(25) [not null]
-  "id_colonia" int [not null]
-
-  Indexes {
-    id_colonia [type: btree, name: "id_colonia"]
-  }
-}
-
-Table "reportes_fugas" {
-  "id" int [pk, not null, increment]
-  "rfc_cli" varchar(13) [not null]
-  "foto" blob [not null]
-  "mensaje" varchar(500) [not null]
-  "atendido" tinyint(1) [not null]
-  "id_colonia" int [not null]
-
-  Indexes {
-    id_colonia [type: btree, name: "id_colonia"]
-    rfc_cli [type: btree, name: "rfc_cli"]
-  }
-}
-
-Table "sensores_log" {
-  "fecha" datetime [pk, not null]
-  "Wifi_MacAddress" varchar(17) [not null]
-  "presion" double [not null]
-  "caudal" double [not null]
-  "litros_consumidos" double [not null]
-
-  Indexes {
-    Wifi_MacAddress [type: btree, name: "Wifi_MacAddress"]
-  }
-}
-
-Table "suspensiones" {
-  "id" int [pk, not null, increment]
-  "rfc" varchar(13) [not null]
-  "motivo" varchar(50) [not null]
-  "duracion_suspension" datetime [not null]
-  "fecha" datetime [not null]
-
-  Indexes {
-    rfc [type: btree, name: "rfc"]
-  }
-}
-
-Table "tareas_tecnicos" {
-  "id" int [pk, not null, increment]
-  "rfc_tec" varchar(13) [not null]
-  "nombre" text [not null]
-  "descripcion" text [not null]
-  "fecha_asignacion" datetime [not null]
-  "fecha_fin" datetime
-  "estado" varchar(20) [not null]
-  "prioridad" varchar(20) [not null]
-  "evidencia" varchar(255)
-  "observaciones" text
-
-  Indexes {
-    rfc_tec [type: btree, name: "rfc_tec"]
-  }
+Table "session_users" {
+  "id" int [pk, not null]
+  "fech" varchar(40) [not null, note: 'rfc + fecha DD-MM-YY_HH-MM-SS']
+  "rfc" varchar(13) [unique, not null, note: 'RFC del usuario que accedio al sistema']
+  "fech_con" datetime [not null, note: 'Fecha y hora de conexión']
+  "fech_discon" datetime [note: 'Fecha y hora de desconexión']
 }
 
 Table "usuarios" {
@@ -207,53 +19,26 @@ Table "usuarios" {
   "password" varchar(255)
   "rol" int [note: '# 0 == Cliente, 1 == Capturista, 2 == Técnico, 3 == Administrador, 4 = Compañia']
   "last_session" datetime
-  "fech_created" datetime [default: `CURRENT_TIMESTAMP`]
+  "fech_created" datetime [default: `now()`]
   "imagen" varchar(255)
   "id_company" varchar(13)
-
-  Indexes {
-    id_company [type: btree, name: "id_company"]
-  }
 }
 
-Ref "colonias_ibfk_1":"municipios"."id" < "colonias"."municipio"
+Table "visitas" {
+  "id" int [pk, not null, note: 'Identificador único de la visita']
+  "url" int [not null]
+  "ip_user" varchar(255) [not null, note: 'Nombre del tipo de informe (Ejemplo: Tráfico, Conversión)']
+  "user_agent" text [note: 'Información del navegador y dispositivo del usuario']
+  "tiempo_carga" text [not null]
+  "rfc_user" varchar(13)
+  "origin" text [not null]
+  "fecha_int" text [not null]
+  "fecha_out" text
+  "is_rebote" tinyint(1) [default: 0]
+}
 
-Ref "colonias_afectadas_ibfk_1":"mantenimientos"."id" < "colonias_afectadas"."id_mantenimiento"
+Ref "FK_action":"session_users"."id" < "actions_users"."session_id"
 
-Ref "colonias_afectadas_ibfk_2":"colonias"."id" < "colonias_afectadas"."id_colonia"
+Ref "FK_26712":"usuarios"."rfc" < "session_users"."rfc"
 
-Ref "companies_ibfk_1":"colonias"."id" < "companies"."id_colonia"
-
-Ref "contratos_ibfk_1":"usuarios"."rfc" < "contratos"."rfc_cli"
-
-Ref "contratos_ibfk_2":"colonias"."id" < "contratos"."id_colonia"
-
-Ref "dispositivos_ibfk_1":"usuarios"."rfc" < "dispositivos"."rfc_cli"
-
-Ref "estados_ibfk_1":"paises"."id" < "estados"."pais"
-
-Ref "mantenimientos_ibfk_1":"usuarios"."rfc" < "mantenimientos"."rfc_tec"
-
-Ref "mantenimientos_ibfk_2":"companies"."rfc_user" < "mantenimientos"."rfc_company"
-
-Ref "municipios_ibfk_1":"estados"."id" < "municipios"."estado"
-
-Ref "notificaciones_ibfk_1":"usuarios"."rfc" < "notificaciones"."rfc_user"
-
-Ref "pagos_ibfk_1":"usuarios"."rfc" < "pagos"."rfc_cli"
-
-Ref "personas_ibfk_1":"colonias"."id" < "personas"."id_colonia"
-
-Ref "reportes_fugas_ibfk_1":"usuarios"."rfc" < "reportes_fugas"."rfc_cli"
-
-Ref "reportes_fugas_ibfk_2":"colonias"."id" < "reportes_fugas"."id_colonia"
-
-Ref "sensores_log_ibfk_1":"dispositivos"."Wifi_MacAddress" < "sensores_log"."Wifi_MacAddress"
-
-Ref "suspensiones_ibfk_1":"usuarios"."rfc" < "suspensiones"."rfc"
-
-Ref "tareas_tecnicos_ibfk_1":"usuarios"."rfc" < "tareas_tecnicos"."rfc_tec"
-
-Ref "usuarios_ibfk_1":"personas"."rfc" < "usuarios"."rfc"
-
-Ref "usuarios_ibfk_2":"companies"."rfc_user" < "usuarios"."id_company"
+Ref "FK_user_8712":"usuarios"."rfc" < "visitas"."rfc_user"
