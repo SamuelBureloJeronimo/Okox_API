@@ -37,7 +37,6 @@ def with_session(f):
             print("Sesión Cerrada");
     return decorated_function
 
-
 def tarea_programada():
     with app.app_context():
         session = Session()
@@ -78,12 +77,13 @@ if not hasattr(app, 'scheduler_started'):
     app.scheduler_started = True  # Marcar que el scheduler ya inició
 
 if __name__ == '__main__':
-    
+    '''
     try:
         Base.metadata.create_all(engine)
         print("Tablas creadas correctamente")
     except Exception as e:
         print(f"Error al crear las tablas: {e}")
+    '''
     
     try:
         # Intentar hacer una consulta simple para verificar la conexión

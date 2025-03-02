@@ -62,7 +62,7 @@ def enviar_usuario(email):
     if not re.match(email_regex, email):
         return jsonify({"error": "El correo electrónico no tiene un formato válido"}), 400
 
-    required_fields = ["username", "password"]
+    required_fields = ["username", "password", "nomComp"]
     missing_fields = [field for field in required_fields if not request.form.get(field)]
 
     # Validar si falta algún campo
