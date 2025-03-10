@@ -1,14 +1,16 @@
 from datetime import datetime, timedelta
+import email
 import uuid
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import get_jwt
+from flask_mail import Message
 import jwt
 from database.db import *
 from sqlalchemy import Date, cast, exc, func
 from werkzeug.utils import secure_filename
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 import os
-
+from config.mail_conf import mail
 from index import with_session
 from models.Companies import Companies
 from models.Personas import Personas
@@ -22,8 +24,7 @@ load_dotenv()
 BP_System = Blueprint('BP_System', __name__, url_prefix='/api/v1/')
 
 @BP_System.route('/create', methods=['POST'])
-@with_session
-def create_owner(session):
+def create_owner():
     required_fields = ["rfc", "nombre", "app", "apm", "fech_nac", "sex", "tel", "tel_empr","id_colonia", "nombre_empr", "descripcion", "col_empr"]
     missing_fields = [field for field in required_fields if not request.form.get(field)]
 
@@ -49,36 +50,60 @@ def create_owner(session):
         filepath = None
 
     persona = Personas()
-    persona.rfc=request.form.get("rfc"),
-    persona.nombre=request.form.get("nombre"),
-    persona.app=request.form.get("app"),
-    persona.apm=request.form.get("apm"),
-    persona.fech_nac=request.form.get("fech_nac"),
-    persona.sex=request.form.get("sex"),
-    persona.tel=request.form.get("tel"),
+    persona.rfc=request.form.get("rfc")
+    persona.nombre=request.form.get("nombre")
+    persona.app=request.form.get("app")
+    persona.apm=request.form.get("apm")
+    persona.fech_nac=request.form.get("fech_nac")
+    persona.sex=request.form.get("sex")
+    persona.tel=request.form.get("tel")
     persona.id_colonia=request.form.get("id_colonia")
 
     company = Companies()
-    company.rfc_user=request.form.get("rfc"),
-    company.logo="/companies/"+nuevo_nombre,
-    company.nombre=request.form.get("nombre_empr"),
-    company.descripcion=request.form.get("descripcion"),
-    company.telefono=request.form.get("tel_empr"),
-    company.facebook=request.form.get("facebook"),
-    company.linkedIn=request.form.get("linkedIn"),
+    company.rfc_user=request.form.get("rfc")
+    company.logo="/companies/"+nuevo_nombre
+    company.nombre=request.form.get("nombre_empr")
+    company.descripcion=request.form.get("descripcion")
+    company.telefono=request.form.get("tel_empr")
+    company.facebook=request.form.get("facebook")
+    company.linkedIn=request.form.get("linkedIn")
     company.link_x=request.form.get("link_x")
     company.id_colonia=request.form.get("col_empr")
 
     user = Usuarios()
     user.rfc=request.form.get("rfc"),
-    user.username=request.form.get("username"),
-    user.password=request.form.get("password"),
-    user.email=request.form.get("email"),
+    user.username=request.form.get("username")
+    user.password=request.form.get("password")
+    user.email=request.form.get("email")
     user.rol=4
     user.id_company=company.rfc_user
     
+    session = Session()
     session.add_all([persona, company, user])
+
+    url_login = "http://localhost:4200/login"
+
+    # Cargar la plantilla y reemplazar valores
+    with open("email_template.html", "r", encoding="utf-8") as file:
+        html_content = file.read()
+
+    html_content = html_content.format(
+        nombre_usuario=request.form.get("nombre"),
+        usuario=request.form.get("username"),
+        contraseña=request.form.get("password"),
+        url_login=url_login
+    )
+
+    msg = Message("Tu cuenta ha sido creada", recipients=[request.form.get("email")])
+    msg.html = html_content
+
+    try:
+        mail.send(msg)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+    
     session.commit()
+    session.close();
     return jsonify({"mensaje": "¡Nueva compañia registrada con éxito!"}), 200
 
     

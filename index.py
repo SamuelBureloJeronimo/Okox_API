@@ -37,7 +37,6 @@ def with_session(f):
             print("Sesión Cerrada");
     return decorated_function
 
-
 def tarea_programada():
     with app.app_context():
         session = Session()
