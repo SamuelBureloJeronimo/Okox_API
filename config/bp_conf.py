@@ -9,6 +9,7 @@ from routes.SystemServ import BP_System
 from routes.Cliente import BP_Clientes
 from routes.Administrador import BP_Administracion
 from routes.Capturista import BP_Capturista
+from routes.Usuario import BP_User
 
 app.register_blueprint(BP_Public)
 app.register_blueprint(BP_System)
@@ -18,5 +19,6 @@ app.register_blueprint(BP_Administracion)
 app.register_blueprint(BP_Capturista)
 app.register_blueprint(BP_Technician)
 app.register_blueprint(BP_SuperUser)
+app.register_blueprint(BP_User)
 
 bp = app

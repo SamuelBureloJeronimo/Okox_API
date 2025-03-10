@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey
+from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Double
 from sqlalchemy.orm import relationship
 from database.db import Base
 
@@ -10,6 +10,7 @@ class Dispositivos(Base):
     valvula = Column(Integer, nullable=True)
     status = Column(Integer, nullable=True)
     last_connection = Column(DateTime)
+    version = Column(Double, default='0.1', nullable=False)
     
     # Relaciones
     cliente = relationship("Usuarios", back_populates="dispositivos")

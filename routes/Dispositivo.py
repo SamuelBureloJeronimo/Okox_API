@@ -38,7 +38,7 @@ def connect_device():
 
         session.query(Dispositivos).filter(Dispositivos.Wifi_MacAddress==mac_add).update({Dispositivos.last_connection: func.now()})
         session.commit()
-        return jsonify({"mensaje": "¡Conexión establecida con éxito!", "rfc": disp.rfc}), 200
+        return jsonify({"mensaje": "¡Conexión establecida con éxito!", "rfc": disp.rfc_cli}), 200
     except exc.SQLAlchemyError as e:
         session.rollback()
         print(e.args)
@@ -51,7 +51,7 @@ def connect_device():
 
 @BP_dispositivo.route("/send_data", methods=["POST"])
 def send_data():
-    required_fields = ["dir_mac", "presion", "caudal", "lit_con"]
+    required_fields = ["dir_mac", "presion", "caudal", "lit_con", "version"]
     missing_fields = [field for field in required_fields if not request.json.get(field)]
 
     # Validar si falta algún campo
@@ -67,14 +67,38 @@ def send_data():
     try:
         session.add(log)
         session.commit()
-        return jsonify("Registrado"), 200
+        #return jsonify({"message": "Registrado", "update": "New update"}), 200
+        return jsonify({"message": "Registrado"}), 200
     except exc.SQLAlchemyError as e:
         session.rollback()
         return jsonify({
             "error": (e.args)
         }), 400 
     
+@BP_dispositivo.route("/await-confirm", methods=["POST"])
+def await_confirm():
+    session = Session()
+    required_fields = ["macAdd"]
+    missing_fields = [field for field in required_fields if not request.json.get(field)]
 
+    # Validar si falta algún campo
+    if missing_fields:
+        return jsonify({"error": f"Faltan los siguientes campos: {', '.join(missing_fields)}"}), 400
+    
+    mac = request.json.get("macAdd");
+
+    try:
+        conReg = session.query(Dispositivos).get(mac)
+        if conReg is None:
+            return jsonify("Aun no se ha registrado"), 400
+        
+        return jsonify("Registrado"), 200
+    except exc.SQLAlchemyError as e:
+        session.rollback()
+        return jsonify({
+            "error": (e.args)
+        }), 400 
+  
 
 @BP_dispositivo.route('/download', methods=['GET'])
 def download_file():

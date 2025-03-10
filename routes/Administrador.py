@@ -76,7 +76,8 @@ def get_users(session):
     persona_alias = aliased(Personas)
 
     # Hacemos el JOIN con Personas
-    users = session.query(Usuarios, persona_alias).join(persona_alias, Usuarios.rfc == persona_alias.rfc)\
+    users = session.query(Usuarios, persona_alias)\
+        .join(persona_alias, Usuarios.rfc == persona_alias.rfc)\
     .filter((Usuarios.rol > 0) & (Usuarios.rol < 3)).all()
 
     # Convertir a lista de diccionarios sin escribir campo por campo
