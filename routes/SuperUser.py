@@ -12,6 +12,9 @@ from models.Usuarios import Usuarios
 from sqlalchemy.orm import aliased
 from werkzeug.utils import secure_filename
 
+# Cargar variables desde el archivo .env
+load_dotenv()
+
 BP_SuperUser = Blueprint('BP_SuperUser', __name__, url_prefix='/super')
 
 @BP_SuperUser.route('/change-image', methods=['POST'])
@@ -25,6 +28,7 @@ def change_image(session):
     # Validar si la imagen está presente
     if 'img' not in request.files:
         return jsonify({"error": "El campo 'img' es obligatorio"}), 400
+    
     rfc = "BUJS030806UM7";
     # Procesar la imagen
     file = request.files['img']
@@ -42,4 +46,3 @@ def change_image(session):
         file.save("public/image/"+okox.logo)
     
     return jsonify("¡Imagen actualizada con éxito!"), 200
-  

@@ -4,7 +4,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import get_jwt
 import jwt
 from database.db import *
-from sqlalchemy import Date, cast, exc, func
+from sqlalchemy import Date, case, cast, desc, exc, func
 from werkzeug.utils import secure_filename
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 import os
@@ -125,10 +125,14 @@ def visit():
         tiempo_carga = float(tiempo_carga)
     except ValueError:
         tiempo_carga = None  # O el valor que desees en caso de error (o un valor por defecto)
-        
+    
+    if request.form.get("url") == "/":
+        url = "/home"
+    else:
+        url = request.form.get("url")
 
     newVis = Visitas(
-        url=request.form.get("url"),
+        url=url,
         ip_user=request.form.get("ip"),
         tiempo_carga=request.form.get("t-carga"),
         duracion=request.form.get("t-page"),
@@ -158,27 +162,63 @@ def visit():
 @BP_System.route("/get-metrics", methods=["GET"])
 @with_session
 def get_metrics(session):
+    # Obtener fecha de hoy
+    today = datetime.now().date()
 
-    # Obtener el número total de sesiones
-    no_ses = session.query(func.count(Sessions.id)).scalar()
+    # 1 **Visitas de hoy**
+    visitas_hoy = session.query(Visitas).filter(func.date(Visitas.fecha) == today).count()
 
-    # Obtener ambos promedios en una sola consulta
-    prom_t_carga, prom_dura = session.query(func.avg(Visitas.tiempo_carga), func.avg(Visitas.duracion)).one()
+    # 2 **Usuarios únicos de hoy (IP únicas)**
+    us_un = session.query(func.count(func.distinct(Visitas.ip_user))).filter(
+    func.date(Visitas.fecha) == today).scalar()
 
-    # Obtener el origen más usado
-    origen_mas_usado = (
-        session.query(Visitas.origin, func.count(Visitas.origin).label("total"))
-        .filter(Visitas.origin.in_(['desktop', 'mobile', 'tablet']))  # Asegurarse de que solo se cuenten estos tres
-        .group_by(Visitas.origin)
-        .order_by(func.count(Visitas.origin).desc())
-        .first()  # Obtén el primer resultado (el más usado)
+
+    total_visitas = session.query(Visitas).count()
+
+    # 3 **Tasa de rebote**
+    rebotes = session.query(Visitas).filter(Visitas.duracion < 5).count()
+    t_reb = (rebotes / total_visitas) * 100 if total_visitas > 0 else 0
+
+    # 4 **Tasa de retención**
+    ret = session.query(Visitas).filter(Visitas.duracion >= 5).count()
+    t_ret = (ret / total_visitas) * 100 if total_visitas > 0 else 0
+
+
+    # Obtener las 3 páginas más visitadas
+    paginas_mas_visitadas = (
+        session.query(Visitas.url, func.count().label("visitas"))
+        .group_by(Visitas.url)
+        .order_by(desc("visitas"))
+        .limit(6)
+        .all()
     )
 
-    # Construir la respuesta
-    data = {
-        "no_sess": no_ses,  # Número total de sesiones
-        "prom_carga": prom_t_carga,  # Promedio de tiempo de carga
-        "prom_dur": prom_dura,  # Promedio de duración
-        "origins": origen_mas_usado.origin if origen_mas_usado else None  # Origen más usado
+    tasa = {
+        "visitas_hoy": visitas_hoy,
+        "us_un": us_un,
+        "t_reb": round(t_reb, 0),
+        "t_ret": round(t_ret, 0)
     }
-    return jsonify(data), 200
+
+    # Contar las visitas por dispositivo
+    visitas_por_dispositivo = (
+        session.query(
+            case(
+                (Visitas.origin.ilike("%mobile%"), "mobile"),
+                (Visitas.origin.ilike("%tablet%"), "tablet"),
+                else_="desktop"
+            ).label("dispositivo"),
+            func.count().label("total")
+        )
+        .group_by("dispositivo")
+        .all()
+    )
+
+    # Formatear respuesta
+    resultado = {
+        "top_paginas": [{"url": url, "visitas": visitas} for url, visitas in paginas_mas_visitadas],
+        "visitas_por_dispositivo": {dispositivo: total for dispositivo, total in visitas_por_dispositivo},
+        "tasa": tasa
+    }
+
+    return jsonify(resultado)
