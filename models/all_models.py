@@ -30,3 +30,5 @@ from models.Sessions import Sessions
 from models.Visitas import Visitas
 from models.Actividades import Actividades
 from models.MyCompany import MyCompany
+
+from models.Posts import Posts

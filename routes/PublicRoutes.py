@@ -12,6 +12,7 @@ from database.db import *
 from index import with_session
 from models.MyCompany import MyCompany
 from models.Companies import Companies
+from models.Posts import Posts
 from models.Sessions import Sessions
 from models.Usuarios import Usuarios
 from models.address.Estados import Estados
@@ -107,7 +108,7 @@ def enviar_usuario(email):
 
 @BP_Public.route('/<path:filename>', methods=['GET'])
 def public_files(filename):
-    return send_from_directory('../public/image', filename)
+    return send_from_directory('../public/', filename)
 
 @BP_Public.route('/image/clients/<path:filename>', methods=['GET'])
 def public_clients_files(filename):
@@ -131,7 +132,7 @@ def login(session):
     email = request.form.get("email");
     password = request.form.get("password");
 
-    user = session.query(Usuarios).filter_by(email=email, password=password).first()
+    user = session.query(Usuarios).filter_by(email=email, password=password).first()    
 
     if user is None:
         user = session.query(Usuarios).filter_by(username=email, password=password).first()
@@ -230,13 +231,24 @@ def change_image_perfil(session):
         nuevo_nombre = f"{uuid.uuid4()}{ext}"  # Generar un nuevo nombre único
         filepath = os.path.join(os.getenv("UPLOAD_FOLDER")+"image/clients/", nuevo_nombre)
         file.save(filepath)
-        session.query(Usuarios).filter(Usuarios.email == email).update({Usuarios.imagen: "/clients/"+nuevo_nombre})
+        session.query(Usuarios).filter(Usuarios.email == email).update({Usuarios.imagen: "/image/clients/"+nuevo_nombre})
         session.commit()
     else:
         file.save("public/image"+user.imagen)
     
     return jsonify("¡Imagen actualizada con éxito!"), 200
          
+
+@BP_Public.route('/get-posts', methods=['GET'])
+@with_session
+def get_all_posts(session):
+    posts = session.query(Posts).all();
+
+    # Convertir lista de objetos en lista de diccionarios
+    posts_list = [pais.to_dict() for pais in posts]
+
+    return jsonify(posts_list), 200
+
 
 
 @BP_Public.route('/get-paises', methods=['GET'])
