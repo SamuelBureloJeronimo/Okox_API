@@ -94,5 +94,5 @@ if __name__ == '__main__':
         print("Conexión exitosa a la base de datos.")
     except Exception as e:
         print(f"Error de conexión: {e}")
-
+    
     app.run(host='0.0.0.0', port=5000, debug=True)
