@@ -6,11 +6,11 @@ class Colonias(Base):
     __tablename__ = 'colonias'
     
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
-    nombre = Column(String(100), nullable=False)
-    ciudad = Column(String(100), nullable=False)
-    municipio = Column(Integer, ForeignKey('municipios.id'))
-    asentamiento = Column(String(100))
-    codigo_postal = Column(Integer)
+    nom = Column(String(100), nullable=False)
+    ciud = Column(String(100), nullable=False)
+    mun_id = Column(Integer, ForeignKey('municipios.id'))
+    asen = Column(String(100))
+    cp = Column(Integer)
     
     # ForaignKey propias de la clase
     municipios = relationship("Municipios", back_populates="fk_colonias")
@@ -24,9 +24,9 @@ class Colonias(Base):
     def to_dict(self):
         return {
             'id': self.id,
-            'nombre': self.nombre,
-            'ciudad': self.ciudad,
-            'municipio': self.municipio,
-            'asentamiento': self.asentamiento,
-            'codigo_postal': self.codigo_postal,
+            'nom': self.nom,
+            'ciud': self.ciud,
+            'mun_id': self.mun_id,
+            'asen': self.asen,
+            'cp': self.cp,
         }

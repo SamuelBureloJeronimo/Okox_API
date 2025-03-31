@@ -6,7 +6,7 @@ class Paises(Base):
     __tablename__ = 'paises'
     
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
-    nombre = Column(String(100), nullable=False)
+    nom = Column(String(100), nullable=False)
 
     # ForaignKey que apuntan a esta clase <-
     fk_estados = relationship("Estados", back_populates="paises")
@@ -14,5 +14,5 @@ class Paises(Base):
     def to_dict(self):
         return {
             'id': self.id,
-            'nombre': self.nombre,
+            'nom': self.nom,
         }

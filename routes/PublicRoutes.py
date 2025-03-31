@@ -270,7 +270,7 @@ def get_paises(session):
 @with_session
 def get_estados(session, id_pais):
 
-    estados = session.query(Estados).filter_by(pais=id_pais).all();
+    estados = session.query(Estados).filter_by(pais_id=id_pais).all();
         
     if(estados is None):
         return jsonify({
@@ -286,7 +286,7 @@ def get_estados(session, id_pais):
 @with_session
 def get_municipios(session, id_estado):
 
-    mun = session.query(Municipios).filter_by(estado=id_estado).all();
+    mun = session.query(Municipios).filter_by(est_id=id_estado).all();
     
     if(mun is None):
         return jsonify({
@@ -302,7 +302,7 @@ def get_municipios(session, id_estado):
 @with_session
 def get_colonias(session, id_municipio):
 
-    colns = session.query(Colonias).filter_by(municipio=id_municipio).all();
+    colns = session.query(Colonias).filter_by(mun_id=id_municipio).all();
 
     if(colns is None):
         return jsonify({
@@ -318,7 +318,7 @@ def get_colonias(session, id_municipio):
 @with_session
 def get_colonias_by_cp(session, cp):
 
-    colns = session.query(Colonias).filter_by(codigo_postal=cp).all();
+    colns = session.query(Colonias).filter_by(cp=cp).all();
 
     if(colns is None):
         return jsonify({

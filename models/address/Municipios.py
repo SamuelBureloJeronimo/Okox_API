@@ -6,8 +6,8 @@ class Municipios(Base):
     __tablename__ = 'municipios'
     
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
-    nombre = Column(String(100), nullable=False)
-    estado = Column(Integer, ForeignKey('estados.id'))
+    nom = Column(String(100), nullable=False)
+    est_id = Column(Integer, ForeignKey('estados.id'))
     
     # ForaignKey propias de la clase
     estados = relationship("Estados", back_populates="fk_municipios")
@@ -17,6 +17,6 @@ class Municipios(Base):
     def to_dict(self):
         return {
             'id': self.id,
-            'nombre': self.nombre,
-            'estado': self.estado,
+            'nom': self.nom,
+            'est_id': self.est_id,
         }
