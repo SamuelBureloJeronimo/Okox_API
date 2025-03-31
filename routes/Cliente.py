@@ -1,10 +1,10 @@
 import uuid
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import get_jwt, jwt_required
+from config.middlewares import with_session
 from database.db import *
 from werkzeug.utils import secure_filename
 
-from index import with_session
 from models.Reportes_Cli import Reportes_Cli
 
 BP_Clientes = Blueprint('BP_Clientes', __name__, url_prefix='/clientes')

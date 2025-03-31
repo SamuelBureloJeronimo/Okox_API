@@ -2,8 +2,8 @@ import secrets
 import string
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt, jwt_required
+from config.middlewares import with_session
 from database.db import *
-from index import with_session
 from models.Mantenimientos import Mantenimientos
 from models.Personas import Personas
 from models.Usuarios import Usuarios

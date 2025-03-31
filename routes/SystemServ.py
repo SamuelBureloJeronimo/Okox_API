@@ -3,13 +3,13 @@ import uuid
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import get_jwt
 import jwt
+from config.middlewares import with_session
 from database.db import *
 from sqlalchemy import Date, case, cast, desc, exc, func
 from werkzeug.utils import secure_filename
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 import os
 
-from index import with_session
 from models.Companies import Companies
 from models.Personas import Personas
 from models.Sessions import Sessions

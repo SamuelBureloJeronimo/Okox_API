@@ -8,8 +8,8 @@ from werkzeug.utils import secure_filename
 
 from jwt import DecodeError, ExpiredSignatureError, InvalidTokenError
 
+from config.middlewares import with_session
 from database.db import *
-from index import with_session
 from models.MyCompany import MyCompany
 from models.Companies import Companies
 from models.Posts import Posts

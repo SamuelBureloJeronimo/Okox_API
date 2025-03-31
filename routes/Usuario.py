@@ -4,7 +4,6 @@ from flask_jwt_extended import get_jwt, jwt_required
 from database.db import *
 from werkzeug.utils import secure_filename
 
-from index import with_session
 from models.Usuarios import Usuarios
 from models.Personas import Personas
 

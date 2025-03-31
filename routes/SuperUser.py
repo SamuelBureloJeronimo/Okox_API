@@ -1,8 +1,8 @@
 import uuid
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt, jwt_required
+from config.middlewares import with_session
 from database.db import *
-from index import with_session
 from models.MyCompany import MyCompany
 from werkzeug.utils import secure_filename
 
