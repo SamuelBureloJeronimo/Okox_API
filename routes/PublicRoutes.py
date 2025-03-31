@@ -1,6 +1,6 @@
 import re
 import uuid
-from sqlalchemy import func
+from sqlalchemy import desc, func
 from flask_mail import Message
 from flask import Blueprint, jsonify, request, send_from_directory
 from flask_jwt_extended import create_access_token, decode_token, get_jwt, jwt_required
@@ -242,7 +242,7 @@ def change_image_perfil(session):
 @BP_Public.route('/get-posts', methods=['GET'])
 @with_session
 def get_all_posts(session):
-    posts = session.query(Posts).all();
+    posts = session.query(Posts).order_by(desc(Posts.fech_alta)).all();
 
     # Convertir lista de objetos en lista de diccionarios
     posts_list = [pais.to_dict() for pais in posts]
