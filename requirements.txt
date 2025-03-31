@@ -19,6 +19,7 @@ Flask-SQLAlchemy==3.1.1
 gevent==24.11.1
 gevent-websocket==0.10.1
 greenlet==3.1.1
+gunicorn==23.0.0
 h11==0.14.0
 idna==3.10
 itsdangerous==2.2.0
